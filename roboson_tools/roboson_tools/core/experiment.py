@@ -47,8 +47,10 @@ try:
     import torchhull as _torchhull  # noqa: F401
     from ..visual_hull.torchhull_adapter import build_transforms_batch, visual_hull_points
     _TORCHHULL_AVAILABLE = True
-except Exception:
-    pass
+except Exception as _torchhull_import_exc:
+    import sys as _sys
+    print(f"[torchhull] недоступен, работаем на CPU-fallback. Причина: "
+          f"{_torchhull_import_exc!r}", file=_sys.stderr)
 
 
 @dataclass
