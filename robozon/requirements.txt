@@ -1,9 +1,14 @@
 # Полное окружение CV-отчёта (torchhull/GPU) — `.venv-cv`, см. `01 Sources/01 Links.md`.
 # torch/torchvision собраны под CUDA 12.1 — ставить с этим индексом:
 #   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121
-# Если на машине нет CUDA — заменить строки torch/torchvision/nvidia-*/triton на CPU-сборку
-# (`pip install torch torchvision` без extra-index-url); CV-отчёт сам переключается на
-# CPU-fallback (polytope/exact hull) при недоступном CUDA, см. cv_report_server.py.
+# GPU не обязателен: габариты и 3D-реконструкция — чистая CPU-геометрия (Exact Polyhedral
+# Visual Hull + триангуляция), torch/torchhull используются только опциональным уточнением
+# вердикта круглости (G4 sustained-check) на пограничных объектах — при отсутствии
+# torch/CUDA эта проверка мягко отключается (try/except вокруг import, без падения),
+# см. roboson_tools/core/experiment.py::_TORCHHULL_AVAILABLE. Чтобы не тянуть CUDA-колёса
+# на сервере без GPU — удалить строки torch/torchvision/torchhull/triton/nvidia-* и
+# при необходимости поставить torch/torchvision отдельно (`pip install torch torchvision`
+# без --extra-index-url, CPU-сборка).
 charonload==0.3.1
 cmake==4.4.0
 colorama==0.4.6

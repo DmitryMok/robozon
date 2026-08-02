@@ -1,5 +1,5 @@
 Webots Project File version R2025a
-perspectives: 000000ff00000000fd00000002000000010000007500000383fc0200000001fb0000001400540065007800740045006400690074006f00720100000015000003830000003f00ffffff00000003000004a500000039fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000004a50000006900ffffff0000042e0000038300000001000000020000000100000008fc00000000
+perspectives: 000000ff00000000fd00000002000000010000007500000178fc0200000001fb0000001400540065007800740045006400690074006f00720100000013000001780000003f00ffffff000000030000035500000039fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000003550000006900ffffff000002de0000017800000001000000020000000100000008fc00000000
 simulationViewPerspectives: 000000ff0000000100000002000001000000035a0100000002010000000100
 sceneTreePerspectives: 000000ff00000001000000030000001e000002a6000000fa0100000002010000000200
 maximizedDockId: -1
@@ -16,9 +16,9 @@ renderingDevicePerspectives: cv_rig_demo:cv_side;0;0.261188;0;0
 renderingDevicePerspectives: cv_rig_demo:cv_top;0;0.261188;0;0
 renderingDevicePerspectives: cv_rig_demo:cv_top_mirror;0;0.261188;0;0
 renderingDevicePerspectives: cv_rig_demo:cv_top_track;1;0.522377;0;0
-renderingDevicePerspectives: demo_panel:cv_diag;0;0.121914;0;0
-renderingDevicePerspectives: demo_panel:cv_diag_mirror;0;0.121914;0;0
-renderingDevicePerspectives: demo_panel:cv_side;0;0.121914;0;0
-renderingDevicePerspectives: demo_panel:cv_top;0;0.121913;0.0186915;1.07288e-06
-renderingDevicePerspectives: demo_panel:cv_top_mirror;0;0.121914;0;0
+renderingDevicePerspectives: demo_panel:cv_diag;0;0.121142;0;0
+renderingDevicePerspectives: demo_panel:cv_diag_mirror;0;0.121142;0;0
+renderingDevicePerspectives: demo_panel:cv_side;0;0.121142;0;0
+renderingDevicePerspectives: demo_panel:cv_top;0;0.121913;0.0186915;0
+renderingDevicePerspectives: demo_panel:cv_top_mirror;0;0.121142;0;0
 renderingDevicePerspectives: demo_panel:cv_top_track;0;0.243827;0;0
