@@ -1,0 +1,206 @@
+#VRML_SIM R2025a utf8
+# Сгенерировано tools/gen_demo_flap_shiber.py — руками не править.
+# Автономная демо-сцена (не часть основной линии sorting_line.wbt).
+
+EXTERNPROTO "../protos/SimpleConveyor.proto"
+
+WorldInfo {
+  title "Demo: шибер на входе в зону (закрыто=барьер, открыто=проём)"
+  basicTimeStep 8
+  optimalThreadCount 4
+  contactProperties [
+    ContactProperties {
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.05 0.05 0.05
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "paddle"
+      coulombFriction [ 0.01 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "round"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "slippery"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.15 0.15 0.15
+      bounce 0
+      softCFM 0.0001
+    }
+  ]
+}
+DEF VIEW Viewpoint {
+  orientation -0.20 0.20 0.96 1.55
+  position 1.5 -3.4 3.0
+}
+Background {
+  skyColor [ 0.65 0.72 0.80 ]
+  luminosity 0.6
+}
+DirectionalLight {
+  direction 0.3 0.4 -1
+  intensity 2.5
+  castShadows FALSE
+}
+DEF MESH_TEMPLATES Solid {
+  translation 0 0 -50
+  name "mesh_templates"
+  children [
+    Shape { castShadows FALSE geometry DEF MESH_box_small Mesh { url [ "../../assets/meshes/box_small.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_lunchbox Mesh { url [ "../../assets/meshes/lunchbox.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_detergent Mesh { url [ "../../assets/meshes/detergent.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bag Mesh { url [ "../../assets/meshes/bag.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pen Mesh { url [ "../../assets/meshes/pen.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_box_large Mesh { url [ "../../assets/meshes/box_large.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pouf Mesh { url [ "../../assets/meshes/pouf.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bottle Mesh { url [ "../../assets/meshes/bottle.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_plate Mesh { url [ "../../assets/meshes/plate.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cylinder Mesh { url [ "../../assets/meshes/cylinder.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_helmet Mesh { url [ "../../assets/meshes/helmet.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_barrel Mesh { url [ "../../assets/meshes/asym_barrel.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cone Mesh { url [ "../../assets/meshes/asym_cone.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cyl Mesh { url [ "../../assets/meshes/asym_cyl.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cyl_skewed Mesh { url [ "../../assets/meshes/cyl_skewed.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_ell_cyl Mesh { url [ "../../assets/meshes/ell_cyl.stl" ] } }
+  ]
+}
+DEF FLOOR Solid {
+  translation 2.5 0 -0.05
+  name "floor"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.55 0.57 0.60 roughness 0.95 metalness 0 }
+      geometry DEF FLOOR_BO Box { size 6.0 2.0 0.1 }
+    }
+  ]
+  boundingObject USE FLOOR_BO
+}
+SimpleConveyor {
+  translation 2.5 0 0
+  name "belt_demo"
+  size 5.0 0.5 0.82
+  speed 1.0
+  borderHeight 0
+}
+Solid {
+  translation 0.3 0 0.821
+  name "spawn_marker"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.20 0.85 0.30 roughness 0.9 metalness 0 emissiveColor 0.05 0.25 0.08 }
+      geometry Box { size 0.03 0.5 0.001 }
+    }
+  ]
+}
+Solid {
+  translation 1.9499999999999997 -0.3 0.821
+  name "zone_marker"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.90 0.15 0.15 roughness 0.9 metalness 0 emissiveColor 0.35 0.03 0.03 }
+      geometry Box { size 0.35 0.35 0.001 }
+    }
+  ]
+}
+Solid {
+  translation 2.5 0.275 0.8099999999999999
+  name "border_left"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF BORDER_LEFT_BO Box { size 5.0 0.03 0.1 }
+    }
+  ]
+  boundingObject USE BORDER_LEFT_BO
+}
+DEF DEMO_PANEL Robot {
+  name "demo_panel"
+  controller "demo_panel_flap"
+  supervisor TRUE
+  children [
+    Pose {
+      translation 2.55 -0.3 0.6365
+      children [
+        Shape {
+          appearance DEF POST_APP PBRAppearance { baseColor 0.30 0.32 0.36 roughness 0.7 metalness 0.5 }
+          geometry Cylinder { radius 0.05 height 1.273 }
+        }
+      ]
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 2.55 -0.3 0
+        axis 0 0 1
+      }
+      device [
+        RotationalMotor {
+          name "paddle_flap"
+          maxVelocity 6.0
+          maxTorque 180
+          controlPID 50 0 0
+          sound ""
+        }
+        PositionSensor {
+          name "paddle_flap_sensor"
+        }
+      ]
+      endPoint Solid {
+        name "paddle flap"
+        contactMaterial "paddle"
+        children [
+          Pose {
+            translation 2.125 -0.3 1.048
+            rotation 1 0 0 0.15
+            children [
+              Shape {
+                appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+                geometry Box { size 0.85 0.03 0.45 }
+              }
+            ]
+          }
+        ]
+        boundingObject Pose {
+          translation 2.125 -0.3 1.048
+          rotation 1 0 0 0.15
+          children [
+            Box { size 0.85 0.03 0.45 }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 3
+          centerOfMass [
+            2.125 -0.3 1.048
+          ]
+        }
+      }
+    }
+    Pose {
+      translation 1.55 0.25 0.83
+      rotation 0 0 1 -1.5708
+      children [
+        DistanceSensor {
+          name "beam_sensor"
+          lookupTable [ 0 0 0, 0.55 0.55 0 ]
+          type "laser"
+          aperture 0.02
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.90 0.10 0.10 emissiveColor 0.5 0.05 0.05 roughness 0.4 metalness 0.3 }
+              geometry Cylinder { radius 0.008 height 0.03 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

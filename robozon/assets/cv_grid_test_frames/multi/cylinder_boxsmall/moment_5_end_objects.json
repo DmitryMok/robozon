@@ -1,0 +1,19 @@
+{
+  "target_uid": 5,
+  "objects": [
+    {
+      "uid": 5,
+      "type": "cylinder",
+      "x": 3.43,
+      "y": 0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 6,
+      "type": "box_small",
+      "x": 2.67,
+      "y": -0.0,
+      "z": 0.7
+    }
+  ]
+}

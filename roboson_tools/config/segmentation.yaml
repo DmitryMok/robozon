@@ -1,0 +1,20 @@
+# Конфигурация backend'а сегментации SAM3 (roboson_tools/segmentation/config.py).
+# Модель вызывается subprocess'ом к Windows .venv соседнего проекта UavVisionLab — там уже
+# установлены torch/tensorrt/sam3 и уже лежат файлы модели, второй раз в venv-roboson-tools
+# их не ставим (архитектурное решение от 2026-07-18, см. заметку задачи в вики).
+
+# Промпт: КОНКРЕТНЫЕ классы + generic-запас. Найдено на реальных фото (2026-07-19): одиночный
+# промпт "object" крайне ненадёжен — SAM3 давала 0 детекций на кадрах с чётко видимой бутылкой,
+# тогда как "bottle" на тех же кадрах даёт conf=0.98 детерминированно. Классы в GUI (поле
+# «Классы:») имеют приоритет над этим значением.
+prompt: "bottle, jar, container, object"
+# Порог намеренно низкий: ложные срабатывания отсекаются не порогом, а геометрическим фильтром
+# области (region_filter.select_region_candidates) + кросс-ракурсным консенсусом реконструкции
+# (pose_carving.carve_consensus). Высокий порог (0.30) терял реальные пограничные детекции
+# отражения в зеркале (conf 0.1-0.3).
+conf_threshold: 0.10
+imgsz: 1008
+
+uavvisionlab_root: "C:/Projects/er-26/UavVisionLab"
+python_exe: "C:/Projects/er-26/UavVisionLab/.venv/Scripts/python.exe"
+timeout_s: 180  # первый вызов дольше — прогрев TRT-движка

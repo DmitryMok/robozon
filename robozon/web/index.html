@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robozon — участок сортировки</title>
+<style>
+  :root {
+    --bg: #14171c; --panel: #1d2229; --line: #2c333d;
+    --text: #dfe5ec; --dim: #8a94a3; --accent: #4da3ff;
+    --ok: #43b581; --warn: #e6a23c; --err: #e05c5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+    display: grid; grid-template-columns: 320px 1fr; grid-template-rows: 48px 1fr;
+    grid-template-areas: "hdr hdr" "side view"; height: 100vh;
+  }
+  header {
+    grid-area: hdr; display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--dim); font-size: 12px; }
+  header .cv-report-link { color: var(--accent); font-size: 12px; text-decoration: none; }
+  header .cv-report-link:hover { text-decoration: underline; }
+  #sim-time { margin-left: auto; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .view-toggle { display: flex; align-items: center; gap: 5px; color: var(--dim); font-size: 12px; }
+  aside {
+    grid-area: side; overflow-y: auto; background: var(--panel);
+    border-right: 1px solid var(--line); padding: 12px;
+  }
+  main { grid-area: view; position: relative; }
+  webots-view { display: block; width: 100%; height: 100%; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--dim); margin: 14px 0 6px; }
+  #mode-label { text-transform: none; letter-spacing: normal; color: var(--accent); }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  button {
+    background: #262d37; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 8px; cursor: pointer; text-align: left;
+    font: inherit; font-size: 13px;
+  }
+  button:hover { border-color: var(--accent); }
+  button .zone { float: right; font-size: 11px; color: var(--dim); }
+  button.reset { width: 100%; margin-top: 8px; text-align: center; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  td, th { padding: 3px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { color: var(--dim); font-weight: 500; }
+  .state-delivered.correct { color: var(--ok); }
+  .state-delivered.wrong { color: var(--err); }
+  .state-missed { color: var(--err); }
+  .state-dispatched { color: var(--warn); }
+  .state-loading { color: var(--dim); font-style: italic; }
+  #events { font-size: 11px; color: var(--dim); max-height: 180px; overflow-y: auto;
+            white-space: pre-wrap; font-family: ui-monospace, monospace; }
+  #stats { font-size: 12px; color: var(--dim); margin-top: 4px; }
+  #record-status { font-size: 12px; color: var(--dim); margin-top: 4px; }
+  #record-status a { color: var(--accent); }
+  #conn { font-size: 12px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+         background: var(--err); margin-right: 5px; }
+  .dot.on { background: var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Robozon</h1>
+  <span class="sub">участок предварительной сортировки — точки A → B / C / D</span>
+  <a class="cv-report-link" id="cv-report-link" target="_blank" rel="noopener">CV-отчёт по STL ↗</a>
+  <span id="sim-time"></span>
+  <label class="view-toggle">
+    <input type="checkbox" id="view-toggle" onchange="toggleView()"> 3D-вид
+  </label>
+</header>
+
+<aside>
+  <div id="conn"><span class="dot" id="conn-dot"></span><span id="conn-text">подключение…</span></div>
+
+  <h2>Положить на ленту</h2>
+  <div class="btns" id="spawn-buttons"></div>
+  <button class="reset" onclick="api('reset')">Сбросить сцену</button>
+
+  <h2>Шиберы <span id="mode-label" class="sub"></span></h2>
+  <div class="btns">
+    <button onclick="route('B')">→ B</button>
+    <button onclick="route('C')">→ C (прямо)</button>
+    <button onclick="route('D')">→ D</button>
+    <button onclick="api('auto')">Авто</button>
+  </div>
+
+  <h2>Запись видео</h2>
+  <div class="btns">
+    <button id="record-btn" onclick="toggleRecord()">Начать запись</button>
+  </div>
+  <div id="record-status"></div>
+
+  <h2>Объекты в работе</h2>
+  <table>
+    <thead><tr><th>#</th><th>Тип</th><th>→</th><th>Статус</th></tr></thead>
+    <tbody id="objects"></tbody>
+  </table>
+  <div id="stats"></div>
+
+  <h2>Журнал</h2>
+  <div id="events"></div>
+</aside>
+
+<main>
+  <webots-view></webots-view>
+</main>
+
+<script type="module" src="/wwi/WebotsView.js"></script>
+<script>
+const STREAM_PORT = 1234;
+// CV-отчёт — независимый процесс на :8010: ошибка чужого STL не останавливает Webots.
+document.getElementById("cv-report-link").href =
+  `${location.protocol}//${location.hostname}:8010/`;
+const stateNames = {
+  on_belt: "на ленте", dispatched: "лоток наведён",
+  delivered: "доставлен", missed: "промах",
+};
+
+async function api(path, body) {
+  const opts = body !== undefined
+    ? {method: "POST", body: JSON.stringify(body)}
+    : (["reset", "auto", "record/start", "record/stop"].includes(path) ? {method: "POST"} : {});
+  const res = await fetch("/api/" + path, opts);
+  return res.json();
+}
+
+function route(zone) {
+  api("route", {zone});
+}
+
+let recordState = "idle";
+
+function toggleRecord() {
+  api(recordState === "recording" ? "record/stop" : "record/start");
+}
+
+function renderRecord(s) {
+  const btn = document.getElementById("record-btn");
+  const status = document.getElementById("record-status");
+  if (s.ffmpeg_available === false) {
+    btn.style.display = "none";
+    status.textContent = "для записи видео на сервере нужен ffmpeg";
+    return;
+  }
+  btn.style.display = "";
+  recordState = s.record_state || "idle";
+  btn.disabled = recordState === "encoding";
+  btn.textContent = recordState === "recording" ? "Остановить запись"
+    : recordState === "encoding" ? "Кодирование…" : "Начать запись";
+  if (recordState === "recording") status.textContent = "идёт запись…";
+  else if (recordState === "encoding") status.textContent = "кодирование…";
+  else if (recordState === "failed") status.textContent = "ошибка записи";
+  else if (recordState === "ready" && s.record_file)
+    status.innerHTML = `готово: <a href="/records/${s.record_file}" download>${s.record_file}</a>`;
+  else status.textContent = "";
+}
+
+// Между кликом на спавн и реальным появлением объекта в /api/status.objects
+// есть заметная пауза (лоток очереди спавна + первая отрисовка геометрии
+// этого типа в Webots) — без обратной связи это на демо читается как «не
+// работает». pending — клиентские плейсхолдеры «загрузка…», заводятся сразу
+// по клику и гасятся, когда в статусе реально появляется новый uid этого
+// типа (FIFO: реальные объекты приходят в том же порядке, что были заказаны).
+let pending = [];
+const knownUids = new Set();
+
+async function initButtons() {
+  const objects = await api("objects");
+  const box = document.getElementById("spawn-buttons");
+  for (const o of objects) {
+    const btn = document.createElement("button");
+    btn.innerHTML = `${o.label} <span class="zone">→ ${o.zone}</span>`;
+    btn.onclick = () => {
+      pending.push({type: o.type, label: o.label, target: o.zone});
+      if (lastStatus) renderStatus(lastStatus);
+      api("spawn", {type: o.type});
+    };
+    box.appendChild(btn);
+  }
+}
+
+let lastStatus = null;
+
+function renderStatus(s) {
+  lastStatus = s;
+  for (const o of s.objects) {
+    if (knownUids.has(o.uid)) continue;
+    knownUids.add(o.uid);
+    const idx = pending.findIndex(p => p.type === o.type);
+    if (idx !== -1) pending.splice(idx, 1);
+  }
+  document.getElementById("sim-time").textContent = "t = " + s.time.toFixed(1) + " c";
+  document.getElementById("mode-label").textContent =
+    s.manual ? `(ручной, цель ${s.route})` : "(авто)";
+  renderRecord(s);
+  if (viewEnabled === null) {
+    const saved = localStorage.getItem("robozon_view");
+    applyView(saved !== null ? saved === "1" : !!s.headless);
+  }
+  const tbody = document.getElementById("objects");
+  tbody.innerHTML = "";
+  for (const p of pending) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>—</td><td>${p.label}</td><td>${p.target}</td>` +
+      `<td class="state-loading">загрузка…</td>`;
+    tbody.appendChild(tr);
+  }
+  for (const o of [...s.objects].reverse()) {
+    const tr = document.createElement("tr");
+    const cls = "state-" + o.state +
+      (o.state === "delivered" ? (o.result === o.target ? " correct" : " wrong") : "");
+    tr.innerHTML = `<td>${o.uid}</td><td>${o.label}</td><td>${o.target}</td>` +
+      `<td class="${cls}">${stateNames[o.state] || o.state}` +
+      (o.state === "delivered" && o.result !== o.target ? ` (в ${o.result}!)` : "") +
+      `</td>`;
+    tbody.appendChild(tr);
+  }
+  const st = s.stats;
+  document.getElementById("stats").textContent =
+    `всего: ${st.total || 0}, доставлено верно: ${st.delivered_correct || 0}` +
+    (st.delivered_wrong ? `, НЕВЕРНО: ${st.delivered_wrong}` : "") +
+    (st.by_state && st.by_state.missed ? `, промахов: ${st.by_state.missed}` : "");
+  document.getElementById("events").textContent = [...s.events].reverse()
+    .map(e => `[${String(e.t).padStart(6)}] ${e.event} ` +
+      Object.entries(e).filter(([k]) => !["t", "event"].includes(k))
+        .map(([k, v]) => `${k}=${v}`).join(" "))
+    .join("\n");
+}
+
+async function poll() {
+  try {
+    renderStatus(await api("status"));
+    setConn(true);
+  } catch {
+    setConn(false);
+  }
+  setTimeout(poll, 700);
+}
+
+function setConn(ok) {
+  document.getElementById("conn-dot").className = "dot" + (ok ? " on" : "");
+  document.getElementById("conn-text").textContent =
+    ok ? "симуляция на связи" : "нет связи с симуляцией";
+}
+
+function connectView() {
+  const view = document.querySelector("webots-view");
+  if (typeof view.connect !== "function") {  // модуль ещё грузится
+    setTimeout(connectView, 300);
+    return;
+  }
+  view.ondisconnect = () => { if (viewEnabled) setTimeout(connectView, 2000); };
+  view.connect(`ws://${location.hostname}:${STREAM_PORT}`, "w3d", false, false, -1);
+}
+
+// При оконном запуске Webots (нативное окно уже есть) 3D-вид в браузере по
+// умолчанию выключен — иначе сцена рендерится дважды впустую (см. run.sh).
+// Решение принимается один раз по первому /api/status (поле headless),
+// дальше — только вручную (сохраняется в localStorage).
+let viewEnabled = null;
+
+function applyView(enabled) {
+  viewEnabled = enabled;
+  document.getElementById("view-toggle").checked = enabled;
+  const view = document.querySelector("webots-view");
+  if (enabled) connectView();
+  else if (typeof view.close === "function") view.close();
+}
+
+function toggleView() {
+  const enabled = document.getElementById("view-toggle").checked;
+  localStorage.setItem("robozon_view", enabled ? "1" : "0");
+  applyView(enabled);
+}
+
+initButtons();
+poll();
+</script>
+</body>
+</html>

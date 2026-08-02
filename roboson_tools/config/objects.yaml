@@ -1,0 +1,64 @@
+# Тестовые объекты (STL из /mnt/c/projects_wiki/robozon/01 Sources/Stl, скопированы в assets/stl).
+# is_round_reference — геометрическая метка формы (истинно круглое сечение), используется
+# только режимом поиска контрпримеров (search/counterexample.py) как эталон "не цилиндр".
+# Это НЕ то же самое, что зона сортировки в Webots-проекте: например "Пуфик" там относится
+# к зоне C по габаритам, но по форме сечения он круглый — is_round_reference: true.
+
+objects:
+  box_small:
+    label: "Короб 300×200×200"
+    path: "Короб 300х200х200.stl"
+    is_round_reference: false
+
+  box_large:
+    label: "Короб 400×400×300"
+    path: "Короб 400х400х300.stl"
+    is_round_reference: false
+
+  lunchbox:
+    label: "Ланчбокс"
+    path: "ЛанчБокс.stl"
+    is_round_reference: false
+
+  bag:
+    label: "Мешок"
+    path: "Мешок.stl"
+    is_round_reference: false
+
+  detergent:
+    label: "Моющее средство"
+    path: "Моющее средство.STL"
+    is_round_reference: false
+
+  pen:
+    label: "Ручка"
+    path: "Ручка.stl"
+    is_round_reference: false
+
+  pouf:
+    label: "Пуфик"
+    path: "Пуфик.stl"
+    is_round_reference: true
+
+  bottle:
+    label: "Бутылка"
+    path: "Бутылка.stl"
+    is_round_reference: true
+
+  plate:
+    label: "Тарелка"
+    path: "Тарелка.stl"
+    is_round_reference: true
+
+  cylinder:
+    label: "Цилиндр"
+    path: "Цилиндр.stl"
+    # Несмотря на имя, меш — НЕ тело вращения (подтверждено 2026-07-10): гранёный профиль
+    # ~38..50 мм и квадратные фланцы на концах; истинная проекция вдоль оси k≈0.75,
+    # катиться не может.
+    is_round_reference: false
+
+  helmet:
+    label: "Шлем"
+    path: "Шлем.stl"
+    is_round_reference: true

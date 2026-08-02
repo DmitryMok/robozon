@@ -1,0 +1,20 @@
+{
+  "target_uid": 1,
+  "frame_idx": 23,
+  "objects": [
+    {
+      "uid": 1,
+      "type": "pen",
+      "x": 3.42,
+      "y": -0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 2,
+      "type": "box_large",
+      "x": 2.79,
+      "y": -0.0,
+      "z": 0.7
+    }
+  ]
+}

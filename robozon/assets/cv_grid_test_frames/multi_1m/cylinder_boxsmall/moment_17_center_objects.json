@@ -1,0 +1,22 @@
+{
+  "target_uid": 17,
+  "threshold": "center",
+  "moment": "center",
+  "threshold_x": 2.55,
+  "objects": [
+    {
+      "uid": 17,
+      "type": "cylinder",
+      "x": 2.56,
+      "y": -0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 18,
+      "type": "box_small",
+      "x": 1.47,
+      "y": -0.0,
+      "z": 0.7
+    }
+  ]
+}

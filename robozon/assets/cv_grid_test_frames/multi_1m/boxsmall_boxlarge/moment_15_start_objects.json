@@ -1,0 +1,22 @@
+{
+  "target_uid": 15,
+  "threshold": "start_side",
+  "moment": "start",
+  "threshold_x": 2.2320206439418464,
+  "objects": [
+    {
+      "uid": 15,
+      "type": "box_small",
+      "x": 2.28,
+      "y": -0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 16,
+      "type": "box_large",
+      "x": 1.24,
+      "y": 0.0,
+      "z": 0.7
+    }
+  ]
+}

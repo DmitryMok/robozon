@@ -1,0 +1,135 @@
+{
+  "scale": 2.0818164100074896,
+  "native_side": 432,
+  "cells": {
+    "start_top": {
+      "camera": "top",
+      "moment": "start",
+      "crop_x": 756,
+      "crop_y": 1032,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "geometry",
+      "has_background": true,
+      "has_prev": true
+    },
+    "start_side": {
+      "camera": "side",
+      "moment": "start",
+      "crop_x": 762,
+      "crop_y": 1452,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "center_top": {
+      "camera": "top",
+      "moment": "center",
+      "crop_x": 759,
+      "crop_y": 1029,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "center_side": {
+      "camera": "side",
+      "moment": "center",
+      "crop_x": 762,
+      "crop_y": 988,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "center_diag": {
+      "camera": "diag",
+      "moment": "center",
+      "crop_x": 755,
+      "crop_y": 1020,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "center_top_mirror": {
+      "camera": "top_mirror",
+      "moment": "center",
+      "crop_x": 760,
+      "crop_y": 1037,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "center_diag_mirror": {
+      "camera": "diag_mirror",
+      "moment": "center",
+      "crop_x": 756,
+      "crop_y": 1038,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "end_side": {
+      "camera": "side",
+      "moment": "end",
+      "crop_x": 762,
+      "crop_y": 672,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    },
+    "end_top": {
+      "camera": "top",
+      "moment": "end",
+      "crop_x": 755,
+      "crop_y": 869,
+      "crop_side": 432,
+      "frame_w": 1944,
+      "frame_h": 2592,
+      "scale": 2.0818164100074896,
+      "bbox_source": "strip",
+      "has_background": true,
+      "has_prev": true
+    }
+  },
+  "assemble_grid_v2_s": {
+    "runs": 20,
+    "min": 0.0464,
+    "mean": 0.0575,
+    "max": 0.0658
+  },
+  "top_localization_s": {
+    "runs": 20,
+    "min": 0.00819,
+    "mean": 0.00984,
+    "max": 0.01178
+  }
+}

@@ -1,0 +1,39 @@
+# Именованные пресеты рига камер (угол + дистанция на каждую камеру) для Camera Mode.
+# fov/разрешение/супсемплинг сюда не входят — общие настройки на весь риг, см.
+# app_settings.yaml (camera_fov_deg/camera_resolution_px/camera_supersample).
+#
+# readonly: true — встроенные пресеты, поставляемые с проектом; core/camera_rig.py запрещает
+# их перезапись/удаление под тем же именем (см. upsert_preset/delete_preset). Пользовательские
+# пресеты (readonly: false или отсутствует) дописываются сюда же диалогом настройки рига камер.
+
+presets:
+  - name: "2 камеры + зеркало (дефолт)"
+    readonly: true
+    cameras:
+      # Дистанции — из docs/mirror_geometry_calc.md §3/§7 (положение зеркала t=-1500мм):
+      # прямые ракурсы (0/90) — высота камеры над лентой 2000мм; зеркальные (45/135) —
+      # оптический путь камера->зеркало->объект длиннее и РАЗНЫЙ для двух камер.
+      - {angle_deg: 0, distance_mm: 2000}
+      - {angle_deg: 45, distance_mm: 2900}
+      - {angle_deg: 90, distance_mm: 2000}
+      - {angle_deg: 135, distance_mm: 4908}
+  - name: "0/90 (2 прямые камеры)"
+    readonly: true
+    cameras:
+      - {angle_deg: 0, distance_mm: 2000}
+      - {angle_deg: 90, distance_mm: 2000}
+  - name: "Симулятор Webots (cv_rig, 5 ракурсов)"
+    readonly: true
+    cameras:
+      # 1:1 из robozon/config/layout.yaml::cv_rig.cameras (риг «3 камеры + 1 зеркало»,
+      # задача "Рассчитать геометрию 3-камерного рига и зеркала для CV") — для тестов на
+      # синтетической модели и сравнения с результатами реконструкции по кропам сетки
+      # ракурсов из симулятора (задача "3D-реконструкция объекта по кропам сетки
+      # ракурсов", пункт 4 запроса пользователя 2026-07-25). Тот же азимут θ (0°=сбоку +Y,
+      # 90°=сверху +Z, v_θ=(0,cosθ,sinθ)), что и `silhouette/analytical.py::view_axes` —
+      # конвенция совпадает 1:1, пересчёт не нужен.
+      - {angle_deg: 90, distance_mm: 2000}      # top (прямая)
+      - {angle_deg: 70, distance_mm: 1900}      # diag (прямая, наклонная)
+      - {angle_deg: 5, distance_mm: 1100}       # side (прямая)
+      - {angle_deg: 157.26, distance_mm: 2570.6}  # top_mirror (TRUE azimuth, mirror_distance_by_angle)
+      - {angle_deg: 171.95, distance_mm: 2694.3}  # diag_mirror (TRUE azimuth, mirror_distance_by_angle)

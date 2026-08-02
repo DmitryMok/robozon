@@ -1,0 +1,278 @@
+[
+  {
+    "type": "box_small",
+    "uid": 1,
+    "scale": 1.3957816377171215,
+    "timings_s": {
+      "io_load": 0.5633,
+      "assemble_grid_v2": 0.1992,
+      "composite_write": 0.2303,
+      "total": 0.9928
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "lunchbox",
+    "uid": 2,
+    "scale": 2.3388773388773387,
+    "timings_s": {
+      "io_load": 0.5564,
+      "assemble_grid_v2": 0.1433,
+      "composite_write": 0.2467,
+      "total": 0.9464
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "detergent",
+    "uid": 3,
+    "scale": 1.5453296703296704,
+    "timings_s": {
+      "io_load": 0.5136,
+      "assemble_grid_v2": 0.1653,
+      "composite_write": 0.2899,
+      "total": 0.9688
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "bag",
+    "uid": 4,
+    "scale": 2.4725274725274726,
+    "timings_s": {
+      "io_load": 0.5086,
+      "assemble_grid_v2": 0.1444,
+      "composite_write": 0.2482,
+      "total": 0.9013
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "pen",
+    "uid": 5,
+    "scale": 3.205128205128205,
+    "timings_s": {
+      "io_load": 0.6385,
+      "assemble_grid_v2": 0.1326,
+      "composite_write": 0.2418,
+      "total": 1.0129
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "box_large",
+    "uid": 6,
+    "scale": 1.0302197802197801,
+    "timings_s": {
+      "io_load": 0.6041,
+      "assemble_grid_v2": 0.2089,
+      "composite_write": 0.2301,
+      "total": 1.0431
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "pouf",
+    "uid": 7,
+    "scale": 0.9723422644770959,
+    "timings_s": {
+      "io_load": 0.531,
+      "assemble_grid_v2": 0.2859,
+      "composite_write": 0.2429,
+      "total": 1.0599
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "bottle",
+    "uid": 8,
+    "scale": 2.704326923076923,
+    "timings_s": {
+      "io_load": 0.5734,
+      "assemble_grid_v2": 0.1686,
+      "composite_write": 0.24,
+      "total": 0.9821
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "plate",
+    "uid": 9,
+    "scale": 2.3388773388773387,
+    "timings_s": {
+      "io_load": 0.5501,
+      "assemble_grid_v2": 0.1633,
+      "composite_write": 0.2538,
+      "total": 0.9672
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "cylinder",
+    "uid": 10,
+    "scale": 1.1449990255041194,
+    "timings_s": {
+      "io_load": 0.5136,
+      "assemble_grid_v2": 0.1881,
+      "composite_write": 0.223,
+      "total": 0.9247
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [
+      "center_side",
+      "end_side",
+      "start_side"
+    ],
+    "verdict": "ok"
+  },
+  {
+    "type": "helmet",
+    "uid": 11,
+    "scale": 1.4423076923076923,
+    "timings_s": {
+      "io_load": 0.5204,
+      "assemble_grid_v2": 0.1659,
+      "composite_write": 0.2644,
+      "total": 0.9507
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "asym_barrel",
+    "uid": 12,
+    "scale": 2.6223776223776225,
+    "timings_s": {
+      "io_load": 0.5514,
+      "assemble_grid_v2": 0.1355,
+      "composite_write": 0.2293,
+      "total": 0.9162
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "asym_cone",
+    "uid": 13,
+    "scale": 2.4725274725274726,
+    "timings_s": {
+      "io_load": 0.6118,
+      "assemble_grid_v2": 0.1465,
+      "composite_write": 0.2451,
+      "total": 1.0034
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "asym_cyl",
+    "uid": 14,
+    "scale": 2.704326923076923,
+    "timings_s": {
+      "io_load": 0.6073,
+      "assemble_grid_v2": 0.1475,
+      "composite_write": 0.2227,
+      "total": 0.9775
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "cyl_skewed",
+    "uid": 15,
+    "scale": 1.9667832167832167,
+    "timings_s": {
+      "io_load": 0.5243,
+      "assemble_grid_v2": 0.1628,
+      "composite_write": 0.2758,
+      "total": 0.9629
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  },
+  {
+    "type": "ell_cyl",
+    "uid": 16,
+    "scale": 2.1634615384615383,
+    "timings_s": {
+      "io_load": 0.5164,
+      "assemble_grid_v2": 0.1529,
+      "composite_write": 0.237,
+      "total": 0.9063
+    },
+    "missing_cells": [],
+    "extra_cells": [],
+    "swapped_camera_cells": [],
+    "center_touches_edge": [],
+    "fallback_cells": [],
+    "verdict": "ok"
+  }
+]

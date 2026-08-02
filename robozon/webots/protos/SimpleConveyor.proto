@@ -1,0 +1,108 @@
+#VRML_SIM R2025a utf8
+# Самодостаточный конвейер без внешних ассетов (механизм как у официального
+# ConveyorBelt: Track + LinearMotor "belt_motor", контроллер belt_drive).
+# size: x — длина, y — ширина ленты, z — высота верха ленты над полом.
+# borderDrop — опускает бортик вниз на эту величину относительно обычного
+# положения (верх бортика = borderHeight над лентой), НЕ меняя borderHeight —
+# так борт протыкает вверх меньше (для камер сбоку от ленты), но занимает то
+# же физическое место по факту (высота коробки борта не меняется, меняется
+# только её Z-положение). 0 — прежнее поведение.
+# template language: javascript
+
+PROTO SimpleConveyor [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 0 1 0
+  field SFString   name         "conveyor"
+  field SFVec3f    size         3.0 0.5 0.7
+  field SFFloat    speed        1.0
+  field SFFloat    borderHeight 0.04
+  field SFFloat    borderDrop   0.0
+  field SFColor    beltColor    0.16 0.16 0.18
+  field SFColor    frameColor   0.42 0.46 0.52
+]
+{
+  %<
+    const size = fields.size.value;
+    const bh = fields.borderHeight.value;
+    const bd = fields.borderDrop.value;
+  >%
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    controller "belt_drive"
+    controllerArgs [ %<= '"' + fields.speed.value + '"' >% ]
+    children [
+      Track {
+        translation 0 0 %<= 0.75 * size.z >%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor IS beltColor
+              roughness 0.9
+              metalness 0
+            }
+            geometry DEF BELT_BO Box {
+              size %<= size.x >% %<= size.y >% %<= 0.5 * size.z >%
+            }
+          }
+        ]
+        boundingObject USE BELT_BO
+        physics Physics {
+          density -1
+          mass 1
+        }
+        device [
+          LinearMotor {
+            name "belt_motor"
+            maxVelocity %<= Math.abs(fields.speed.value) + 0.01 >%
+            sound ""
+          }
+        ]
+      }
+      Solid {
+        name "frame"
+        children [
+          Shape {
+            appearance DEF FRAME_APP PBRAppearance {
+              baseColor IS frameColor
+              roughness 0.6
+              metalness 0.4
+            }
+            geometry DEF BODY_BO Box {
+              size %<= size.x >% %<= size.y + 0.09 >% %<= 0.5 * size.z >%
+            }
+          }
+        ]
+        translation 0 0 %<= 0.25 * size.z >%
+        boundingObject USE BODY_BO
+      }
+      %< if (bh > 0) { >%
+      Solid {
+        name "border left"
+        translation 0 %<= 0.5 * size.y + 0.025 >% %<= size.z + 0.5 * bh - 0.03 - bd >%
+        children [
+          Shape {
+            appearance USE FRAME_APP
+            geometry DEF BORDER_BO Box {
+              size %<= size.x >% 0.03 %<= bh + 0.06 >%
+            }
+          }
+        ]
+        boundingObject USE BORDER_BO
+      }
+      Solid {
+        name "border right"
+        translation 0 %<= -0.5 * size.y - 0.025 >% %<= size.z + 0.5 * bh - 0.03 - bd >%
+        children [
+          Shape {
+            appearance USE FRAME_APP
+            geometry USE BORDER_BO
+          }
+        ]
+        boundingObject USE BORDER_BO
+      }
+      %< } >%
+    ]
+  }
+}

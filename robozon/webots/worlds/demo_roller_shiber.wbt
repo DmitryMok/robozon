@@ -1,0 +1,215 @@
+#VRML_SIM R2025a utf8
+# Сгенерировано tools/gen_demo_roller_shiber.py — руками не править.
+# Автономная демо-сцена (не часть основной линии sorting_line.wbt).
+
+EXTERNPROTO "../protos/SimpleConveyor.proto"
+
+WorldInfo {
+  title "Demo: модифицированный шибер (вал с лопастями)"
+  basicTimeStep 4
+  contactProperties [
+    ContactProperties {
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.05 0.05 0.05
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "roller"
+      coulombFriction [ 1.0 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "round"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "slippery"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.15 0.15 0.15
+      bounce 0
+      softCFM 0.0001
+    }
+  ]
+}
+DEF VIEW Viewpoint {
+  orientation -0.20 0.20 0.96 1.55
+  position 2.0 -1.6 1.7
+}
+Background {
+  skyColor [ 0.65 0.72 0.80 ]
+  luminosity 0.6
+}
+DirectionalLight {
+  direction 0.3 0.4 -1
+  intensity 2.5
+  castShadows TRUE
+}
+DEF MESH_TEMPLATES Solid {
+  translation 0 0 -50
+  name "mesh_templates"
+  children [
+    Shape { castShadows FALSE geometry DEF MESH_box_small Mesh { url [ "../../assets/meshes/box_small.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_lunchbox Mesh { url [ "../../assets/meshes/lunchbox.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_detergent Mesh { url [ "../../assets/meshes/detergent.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bag Mesh { url [ "../../assets/meshes/bag.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pen Mesh { url [ "../../assets/meshes/pen.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_box_large Mesh { url [ "../../assets/meshes/box_large.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pouf Mesh { url [ "../../assets/meshes/pouf.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bottle Mesh { url [ "../../assets/meshes/bottle.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_plate Mesh { url [ "../../assets/meshes/plate.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cylinder Mesh { url [ "../../assets/meshes/cylinder.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_helmet Mesh { url [ "../../assets/meshes/helmet.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_barrel Mesh { url [ "../../assets/meshes/asym_barrel.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cone Mesh { url [ "../../assets/meshes/asym_cone.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cyl Mesh { url [ "../../assets/meshes/asym_cyl.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cyl_skewed Mesh { url [ "../../assets/meshes/cyl_skewed.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_ell_cyl Mesh { url [ "../../assets/meshes/ell_cyl.stl" ] } }
+  ]
+}
+DEF FLOOR Solid {
+  translation 2.5 0 -0.05
+  name "floor"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.55 0.57 0.60 roughness 0.95 metalness 0 }
+      geometry DEF FLOOR_BO Box { size 6.0 2.0 0.1 }
+    }
+  ]
+  boundingObject USE FLOOR_BO
+}
+SimpleConveyor {
+  translation 2.5 0 0
+  name "belt_demo"
+  size 5.0 0.5 0.82
+  speed 1.0
+  borderHeight 0
+}
+Robot {
+  translation 2.6 0.3 0.875
+  rotation 0 0 1 -0.61
+  name "roller_shiber_demo"
+  controller "roller_spin"
+  controllerArgs [ "-10.0" ]
+  children [
+    Pose {
+      translation 0.575 0 0.20500000000000007
+      rotation 1 0 0 0.15
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+          geometry Box { size 1.15 0.03 0.3 }
+        }
+      ]
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 0.575 0.030982719701950504 0
+        axis 1 0 0
+      }
+      device [
+        RotationalMotor {
+          name "roller_motor"
+          maxVelocity 12.0
+          maxTorque 40.0
+          sound ""
+        }
+      ]
+      endPoint Solid {
+        translation 0.575 0.030982719701950504 0
+        name "roller shaft"
+        contactMaterial "roller"
+        children [
+          Pose {
+          rotation 0 1 0 1.5708
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.30 0.32 0.36 roughness 0.7 metalness 0.5 }
+              geometry Cylinder { radius 0.025 height 1.15 }
+            }
+          ]
+        }
+    Pose {
+      translation 0 0.035 0.0
+      rotation 1 0 0 0.0
+      children [ Shape {
+              appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+              geometry Box { size 1.15 0.019999999999999997 0.006 }
+            } ]
+    }
+    Pose {
+      translation 0 2.1431318985078684e-18 0.035
+      rotation 1 0 0 1.5707963267948966
+      children [ Shape {
+              appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+              geometry Box { size 1.15 0.019999999999999997 0.006 }
+            } ]
+    }
+    Pose {
+      translation 0 -0.035 4.286263797015737e-18
+      rotation 1 0 0 3.141592653589793
+      children [ Shape {
+              appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+              geometry Box { size 1.15 0.019999999999999997 0.006 }
+            } ]
+    }
+    Pose {
+      translation 0 -6.429395695523605e-18 -0.035
+      rotation 1 0 0 4.71238898038469
+      children [ Shape {
+              appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+              geometry Box { size 1.15 0.019999999999999997 0.006 }
+            } ]
+    }
+        ]
+        boundingObject Group {
+          children [
+            Pose {
+          rotation 0 1 0 1.5708
+          children [ Cylinder { radius 0.025 height 1.15 } ]
+        }
+    Pose {
+      translation 0 0.035 0.0
+      rotation 1 0 0 0.0
+      children [ Box { size 1.15 0.019999999999999997 0.006 } ]
+    }
+    Pose {
+      translation 0 2.1431318985078684e-18 0.035
+      rotation 1 0 0 1.5707963267948966
+      children [ Box { size 1.15 0.019999999999999997 0.006 } ]
+    }
+    Pose {
+      translation 0 -0.035 4.286263797015737e-18
+      rotation 1 0 0 3.141592653589793
+      children [ Box { size 1.15 0.019999999999999997 0.006 } ]
+    }
+    Pose {
+      translation 0 -6.429395695523605e-18 -0.035
+      rotation 1 0 0 4.71238898038469
+      children [ Box { size 1.15 0.019999999999999997 0.006 } ]
+    }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 0.6
+        }
+      }
+    }
+  ]
+  boundingObject Pose {
+    translation 0.575 0 0.20500000000000007
+      rotation 1 0 0 0.15
+    children [ Box { size 1.15 0.03 0.3 } ]
+  }
+}
+DEF DEMO_PANEL Robot {
+  name "demo_panel"
+  controller "demo_panel"
+  supervisor TRUE
+}

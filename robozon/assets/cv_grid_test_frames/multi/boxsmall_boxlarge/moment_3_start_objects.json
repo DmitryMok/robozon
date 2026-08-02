@@ -1,0 +1,19 @@
+{
+  "target_uid": 3,
+  "objects": [
+    {
+      "uid": 3,
+      "type": "box_small",
+      "x": 2.42,
+      "y": -0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 4,
+      "type": "box_large",
+      "x": 1.64,
+      "y": -0.0,
+      "z": 0.7
+    }
+  ]
+}

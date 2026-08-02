@@ -1,0 +1,969 @@
+#VRML_SIM R2025a utf8
+# Сгенерировано tools/gen_demo_mechanism.py — руками не править.
+# Автономная демо-сцена исполнительного механизма (не часть sorting_line.wbt).
+# Шаг 1/6: профиль ленты (низкий сегмент как в проде +20см буфера -> подъём ->
+# высокий сегмент, конец на +60см дальше проды) + CV-зона на низком сегменте
+# (как в проде, декоративно) + визуализация камер.
+# Шаг 2/6: шибер 1 (загребание, узел flap_node_upstream — 180° от paddle_node
+# проды) + повёрнутый (узкой стороной к ленте) ролл-кейдж + лучевой датчик +
+# бортик на противоположной от щита кромке.
+# Шаги 3-5/6: шибер 2 (зона B) + шибер 3 (oversize) + временная зона накопления
+# (поворот через отражатель + скат). Шаг 6/6: декоративные ArUco-метки на
+# зеркале и бортах ленты (не читаются кодом).
+
+EXTERNPROTO "../protos/SimpleConveyor.proto"
+EXTERNPROTO "../protos/RollCage.proto"
+
+WorldInfo {
+  title "Demo: исполнительный механизм (шаги 1-6 — лента + 3 шибера + накопитель + ArUco-метки)"
+  basicTimeStep 4
+  optimalThreadCount 4
+  contactProperties [
+    ContactProperties {
+      # basicTimeStep снижен с 8 до 4 (ТЗ 2026-07-30): "WARNING: The current
+      # physics step could not be computed correctly" при резком столкновении
+      # мелких объектов с бортиками — это ОТДЕЛЬНАЯ проблема от предупреждения
+      # про >100k вершин STL (то — только рендер, boundingObject у товаров
+      # свой, упрощённый convex-decomposition, см. sim/collision.py — на
+      # физику вершины визуального меша не влияют, отключать физику STL не
+      # нужно). Мельче шаг — прямая рекомендация самого предупреждения
+      # Webots, безопасна и для тайминга щитов (velocity=6 у flap-щитов уже
+      # подобран под ЗАПАС на больший шаг (8мс) без туннелирования — меньший
+      # шаг (4мс) только снижает риск туннелирования, не повышает).
+      # softCFM здесь тоже поднят (0.0001->0.001, мягче дефолтного жёсткого
+      # контакта) — та же идея, что уже сработала для щита (см. material2
+      # "paddle" ниже): резкий удар мелкого объекта об бортик частично
+      # гасится, а не разрешается один жёстким импульсом.
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.05 0.05 0.05
+      bounce 0
+      softCFM 0.001
+    }
+    ContactProperties {
+      # softCFM поднят с 0.0001 (ТЗ 2026-07-30): щит "отфутболивал" объекты —
+      # при жёстком контакте ODE резко гасит проникновение за один шаг, и
+      # относительная скорость лопасти (~7 м/с на конце полотна) против
+      # объекта (лента ~1 м/с) резко переходит в объект одним импульсом.
+      # Больший softCFM делает контакт податливее (ODE решает столкновение
+      # мягче, за несколько шагов) — первое приближение, не тюнинг torque/
+      # velocity/PID щита (те завязаны на тайминг разворота, трогать
+      # рискованнее) — проверить живым прогоном, при недостаточном эффекте
+      # можно поднять ещё (0.01+) или дополнительно снизить motor_torque.
+      material2 "paddle"
+      coulombFriction [ 0.01 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.005
+    }
+    ContactProperties {
+      material2 "chute"
+      coulombFriction [ 0.02 ]
+      rollingFriction 0.0 0.0 0.0
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "round"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.02 0.02 0.02
+      bounce 0
+      softCFM 0.0001
+    }
+    ContactProperties {
+      material2 "slippery"
+      coulombFriction [ 1.2 ]
+      rollingFriction 0.15 0.15 0.15
+      bounce 0
+      softCFM 0.0001
+    }
+  ]
+}
+DEF VIEW Viewpoint {
+  orientation -0.20 0.20 0.96 1.55
+  position 3.675 -9.5 8.5
+}
+Background {
+  skyColor [ 0.65 0.72 0.80 ]
+  luminosity 0.6
+}
+DirectionalLight {
+  direction 0.3 0.4 -1
+  intensity 2.5
+  castShadows TRUE
+}
+DEF MESH_TEMPLATES Solid {
+  translation 0 0 -50
+  name "mesh_templates"
+  children [
+    Shape { castShadows FALSE geometry DEF MESH_box_small Mesh { url [ "http://127.0.0.1:8022/meshes/box_small.stl", "../../assets/meshes/box_small.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_lunchbox Mesh { url [ "http://127.0.0.1:8022/meshes/lunchbox.stl", "../../assets/meshes/lunchbox.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_detergent Mesh { url [ "http://127.0.0.1:8022/meshes/detergent.stl", "../../assets/meshes/detergent.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bag Mesh { url [ "http://127.0.0.1:8022/meshes/bag.stl", "../../assets/meshes/bag.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pen Mesh { url [ "http://127.0.0.1:8022/meshes/pen.stl", "../../assets/meshes/pen.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_box_large Mesh { url [ "http://127.0.0.1:8022/meshes/box_large.stl", "../../assets/meshes/box_large.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_pouf Mesh { url [ "http://127.0.0.1:8022/meshes/pouf.stl", "../../assets/meshes/pouf.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_bottle Mesh { url [ "http://127.0.0.1:8022/meshes/bottle.stl", "../../assets/meshes/bottle.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_plate Mesh { url [ "http://127.0.0.1:8022/meshes/plate.stl", "../../assets/meshes/plate.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cylinder Mesh { url [ "http://127.0.0.1:8022/meshes/cylinder.stl", "../../assets/meshes/cylinder.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_helmet Mesh { url [ "http://127.0.0.1:8022/meshes/helmet.stl", "../../assets/meshes/helmet.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_barrel Mesh { url [ "http://127.0.0.1:8022/meshes/asym_barrel.stl", "../../assets/meshes/asym_barrel.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cone Mesh { url [ "http://127.0.0.1:8022/meshes/asym_cone.stl", "../../assets/meshes/asym_cone.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_asym_cyl Mesh { url [ "http://127.0.0.1:8022/meshes/asym_cyl.stl", "../../assets/meshes/asym_cyl.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_cyl_skewed Mesh { url [ "http://127.0.0.1:8022/meshes/cyl_skewed.stl", "../../assets/meshes/cyl_skewed.stl" ] } }
+    Shape { castShadows FALSE geometry DEF MESH_ell_cyl Mesh { url [ "http://127.0.0.1:8022/meshes/ell_cyl.stl", "../../assets/meshes/ell_cyl.stl" ] } }
+  ]
+}
+DEF FLOOR Solid {
+  translation 4.5 0 -0.05
+  name "floor"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.55 0.57 0.60 roughness 0.95 metalness 0 }
+      geometry DEF FLOOR_BO Box { size 10.0 6.0 0.1 }
+    }
+  ]
+  boundingObject USE FLOOR_BO
+}
+SimpleConveyor {
+  translation 2.175 0 0
+  name "belt_low"
+  size 3.35 0.5 0.7
+  speed 1.0
+  borderDrop 0.0
+  borderHeight 0.0
+}
+Robot {
+  translation 4.358935891546382 0 0.6855342371134808
+  rotation 0 1 0 -0.1194289260183385
+  name "belt_ramp"
+  controller "belt_drive"
+  controllerArgs [ "1.0" ]
+  children [
+    Track {
+      translation 0 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.16 0.16 0.18 roughness 0.9 metalness 0 }
+          geometry DEF RAMP_BO Box { size 1.0071742649611333 0.5 0.15 }
+        }
+      ]
+      boundingObject USE RAMP_BO
+      physics Physics { density -1 mass 1 }
+      device [
+        LinearMotor {
+          name "belt_motor"
+          maxVelocity 1.01
+          sound ""
+        }
+      ]
+    }
+  ]
+}
+SimpleConveyor {
+  translation 6.85 0 0
+  name "belt_high"
+  size 4.0 0.5 0.82
+  speed 1.0
+  borderDrop 0.0
+  borderHeight 0.0
+}
+Solid {
+  translation 2.55 1.2246467991473532e-16 2.7
+  rotation -3.061616997868383e-17 1.0 -3.061616997868383e-17 1.5707963267948966
+  name "cv_marker_top"
+  children [
+    Pose {
+      translation -0.04 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.12 0.12 0.14 roughness 0.5 metalness 0.6 }
+          geometry Box { size 0.06 0.05 0.05 }
+        }
+      ]
+    }
+    Pose {
+      translation -0.01 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.15 0.85 0.95 roughness 0.2 metalness 0.3 emissiveColor 0.05 0.35 0.4 }
+          geometry Sphere { radius 0.014 subdivision 1 }
+        }
+      ]
+    }
+  ]
+}
+Solid {
+  translation 2.55 0.6498382723187708 2.485415979493226
+  rotation -0.17108786974603557 0.9702875252478139 -0.17108786974603557 1.6009545877878544
+  name "cv_marker_diag"
+  children [
+    Pose {
+      translation -0.04 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.12 0.12 0.14 roughness 0.5 metalness 0.6 }
+          geometry Box { size 0.06 0.05 0.05 }
+        }
+      ]
+    }
+    Pose {
+      translation -0.01 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.15 0.85 0.95 roughness 0.2 metalness 0.3 emissiveColor 0.05 0.35 0.4 }
+          geometry Sphere { radius 0.014 subdivision 1 }
+        }
+      ]
+    }
+  ]
+}
+Solid {
+  translation 2.55 1.0958141679009201 0.795871317022424
+  rotation -0.5598087876773538 0.610924088965579 -0.5598087876773538 2.0447662092172108
+  name "cv_marker_side"
+  children [
+    Pose {
+      translation -0.04 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.12 0.12 0.14 roughness 0.5 metalness 0.6 }
+          geometry Box { size 0.06 0.05 0.05 }
+        }
+      ]
+    }
+    Pose {
+      translation -0.01 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.15 0.85 0.95 roughness 0.2 metalness 0.3 emissiveColor 0.05 0.35 0.4 }
+          geometry Sphere { radius 0.014 subdivision 1 }
+        }
+      ]
+    }
+  ]
+}
+
+
+Solid {
+  translation 2.55 1.2246467991473532e-16 2.7
+  rotation -3.061616997868383e-17 1.0 -3.061616997868383e-17 1.5707963267948966
+  name "cv_marker_top_track"
+  children [
+    Pose {
+      translation -0.04 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.12 0.12 0.14 roughness 0.5 metalness 0.6 }
+          geometry Box { size 0.06 0.05 0.05 }
+        }
+      ]
+    }
+    Pose {
+      translation -0.01 0 0
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0.15 0.85 0.95 roughness 0.2 metalness 0.3 emissiveColor 0.05 0.35 0.4 }
+          geometry Sphere { radius 0.014 subdivision 1 }
+        }
+      ]
+    }
+  ]
+}
+Solid {
+  translation 2.55 -0.7062924513957096 1.068201941380976
+  rotation 1 0 0 0.4014257279586958
+  name "cv_mirror"
+  children [
+    Pose {
+      translation 0.0 0 0.385
+      children [
+        Shape {
+          appearance PBRAppearance {
+        baseColor 0.9 0.9 0.95
+        roughness 0.05
+        metalness 0.9
+      }
+          geometry Box { size 1.6 0.02 0.03 }
+        }
+      ]
+    }
+    Pose {
+      translation 0.0 0 -0.385
+      children [
+        Shape {
+          appearance PBRAppearance {
+        baseColor 0.9 0.9 0.95
+        roughness 0.05
+        metalness 0.9
+      }
+          geometry Box { size 1.6 0.02 0.03 }
+        }
+      ]
+    }
+    Pose {
+      translation -0.785 0 0.0
+      children [
+        Shape {
+          appearance PBRAppearance {
+        baseColor 0.9 0.9 0.95
+        roughness 0.05
+        metalness 0.9
+      }
+          geometry Box { size 0.03 0.02 0.74 }
+        }
+      ]
+    }
+    Pose {
+      translation 0.785 0 0.0
+      children [
+        Shape {
+          appearance PBRAppearance {
+        baseColor 0.9 0.9 0.95
+        roughness 0.05
+        metalness 0.9
+      }
+          geometry Box { size 0.03 0.02 0.74 }
+        }
+      ]
+    }
+  ]
+}
+Solid {
+  translation 2.55 -0.7062924513957096 1.068201941380976
+  rotation 1 0 0 0.4014257279586958
+  name "mirror_aruco_markers"
+  children [
+    Pose {
+      translation -0.7200000000000001 0 0.32
+      rotation 1 0 0 -1.5708
+      children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_22_mirror_left_top.png", "../../assets/aruco/marker_22_mirror_left_top.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+    }
+    Pose {
+      translation -0.7200000000000001 0 -0.32
+      rotation 1 0 0 -1.5708
+      children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_23_mirror_left_bottom.png", "../../assets/aruco/marker_23_mirror_left_bottom.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+    }
+    Pose {
+      translation 0.7200000000000001 0 0.32
+      rotation 1 0 0 -1.5708
+      children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_24_mirror_right_top.png", "../../assets/aruco/marker_24_mirror_right_top.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+    }
+    Pose {
+      translation 0.7200000000000001 0 -0.32
+      rotation 1 0 0 -1.5708
+      children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_25_mirror_right_bottom.png", "../../assets/aruco/marker_25_mirror_right_bottom.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+    }
+  ]
+}
+Solid {
+  translation 2.2249999999999996 -0.3 0.701
+  name "belt_marker_left_top"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_26_belt_left_top.png", "../../assets/aruco/marker_26_belt_left_top.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+Solid {
+  translation 2.875 -0.3 0.701
+  name "belt_marker_left_bottom"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_27_belt_left_bottom.png", "../../assets/aruco/marker_27_belt_left_bottom.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+Solid {
+  translation 2.2249999999999996 0.3 0.701
+  name "belt_marker_right_top"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_28_belt_right_top.png", "../../assets/aruco/marker_28_belt_right_top.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+Solid {
+  translation 2.875 0.3 0.701
+  name "belt_marker_right_bottom"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/aruco/marker_29_belt_right_bottom.png", "../../assets/aruco/marker_29_belt_right_bottom.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.05 -0.05 0, 0.05 -0.05 0, 0.05 0.05 0, -0.05 0.05 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+RollCage {
+  translation 5.19 -0.9 0
+  rotation 0 0 1 0.0
+  name "roll cage 1"
+  size 0.8 1.2 0.8
+  wallThickness 0.08
+  closed TRUE
+}
+Solid {
+  translation 5.19 -1.505 0.475
+  rotation 1 0 0 1.5708
+  name "cage1_label_D"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/cage_labels/label_D.png", "../../assets/cage_labels/label_D.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.15 -0.15 0, 0.15 -0.15 0, 0.15 0.15 0, -0.15 0.15 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+Solid {
+  translation 6.05 0.275 0.8099999999999999
+  name "border_shiber1"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF BORDER_SHIBER1_BO Box { size 2.4000000000000004 0.03 0.1 }
+    }
+  ]
+  boundingObject USE BORDER_SHIBER1_BO
+}
+RollCage {
+  translation 6.4 -0.9 0
+  rotation 0 0 1 0.0
+  name "roll cage 2"
+  size 0.8 1.2 0.8
+  wallThickness 0.08
+  closed TRUE
+}
+Solid {
+  translation 6.4 -1.505 0.475
+  rotation 1 0 0 1.5708
+  name "cage2_label_C"
+  children [ Shape {
+          appearance PBRAppearance {
+            baseColorMap ImageTexture { url [ "http://127.0.0.1:8022/assets/cage_labels/label_C.png", "../../assets/cage_labels/label_C.png" ] }
+            roughness 1
+            metalness 0
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate { point [ -0.15 -0.15 0, 0.15 -0.15 0, 0.15 0.15 0, -0.15 0.15 0 ] }
+            coordIndex [ 0 1 2 3 -1, 0 3 2 1 -1 ]
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            texCoordIndex [ 0 1 2 3 -1, 0 1 2 3 -1 ]
+          }
+        } ]
+}
+Solid {
+  translation 7.725 0.41928698437646816 0.7363875800823461
+  rotation 1 0 0 -0.3347368373168147
+  name "zone_b2_chute_floor"
+  contactMaterial "chute"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.16 0.16 0.18 roughness 0.9 metalness 0 }
+      geometry DEF CHUTE2_FLOOR_BO Box { size 0.95 0.36527386985657756 0.05 }
+    }
+  ]
+  boundingObject USE CHUTE2_FLOOR_BO
+}
+Solid {
+  translation 7.25 1.3775 0.7250000000000001
+  rotation 0 0 1 1.5707963267948966
+  name "wall_b2_left"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF WALL_B2_LEFT_BO Box { size 2.245 0.02 0.35 }
+    }
+  ]
+  boundingObject USE WALL_B2_LEFT_BO
+}
+Solid {
+  translation 7.975 0.4275 0.7250000000000001
+  rotation 0 0 1 2.4875099291754323
+  name "wall_b2_right_taper"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF WALL_B2_RIGHT_TAPER_BO Box { size 0.5670317451430734 0.02 0.35 }
+    }
+  ]
+  boundingObject USE WALL_B2_RIGHT_TAPER_BO
+}
+Solid {
+  translation 7.75 1.55 0.7250000000000001
+  rotation 0 0 1 1.5707963267948966
+  name "wall_b2_right_straight"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF WALL_B2_RIGHT_STRAIGHT_BO Box { size 1.9 0.02 0.35 }
+    }
+  ]
+  boundingObject USE WALL_B2_RIGHT_STRAIGHT_BO
+}
+SimpleConveyor {
+  translation 7.5 1.55 0
+  rotation 0 0 1 1.5708
+  name "belt_b"
+  size 1.9 0.5 0.7
+  speed 1.0
+  borderHeight 0
+}
+DEF END_WALL_B Solid {
+  translation 7.5 2.57 0.95
+  name "end wall b"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF WALL_B_BO Box { size 0.7 0.04 0.5 }
+    }
+  ]
+  boundingObject USE WALL_B_BO
+}
+Solid {
+  translation 7.525 -0.275 0.8099999999999999
+  name "border_shiber2"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF BORDER_SHIBER2_BO Box { size 0.6499999999999995 0.03 0.1 }
+    }
+  ]
+  boundingObject USE BORDER_SHIBER2_BO
+}
+Solid {
+  translation 8.5 0.0 0.7250000000000001
+  rotation 0 0 1 -0.7853981633974483
+  name "accum_deflector"
+  contactMaterial "paddle"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF ACCUM_DEFLECTOR_BO Box { size 0.7071067811865476 0.02 0.35 }
+    }
+  ]
+  boundingObject USE ACCUM_DEFLECTOR_BO
+}
+Solid {
+  translation 8.35 -0.41118033988749897 0.717360679774998
+  rotation 1 0 0 -2.677945044588987
+  name "accum_descent"
+  contactMaterial "chute"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.16 0.16 0.18 roughness 0.9 metalness 0 }
+      geometry DEF ACCUM_DESCENT_BO Box { size 1.0 0.3354101966249685 0.05 }
+    }
+  ]
+  boundingObject USE ACCUM_DESCENT_BO
+}
+Solid {
+  translation 8.35 -1.05 0.595
+  name "accumulator"
+  contactMaterial "chute"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.35 0.40 0.46 roughness 0.7 metalness 0.3 }
+      geometry DEF ACCUM_PLATFORM_BO Box { size 1.0 1.0 0.05 }
+    }
+  ]
+  boundingObject USE ACCUM_PLATFORM_BO
+}
+Solid {
+  translation 7.85 -1.05 0.64
+  rotation 0 0 1 -1.5707963267948966
+  name "accum_border_left"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF ACCUM_BORDER_LEFT_BO Box { size 1.0 0.02 0.040000000000000036 }
+    }
+  ]
+  boundingObject USE ACCUM_BORDER_LEFT_BO
+}
+Solid {
+  translation 8.85 -1.05 0.64
+  rotation 0 0 1 -1.5707963267948966
+  name "accum_border_right"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF ACCUM_BORDER_RIGHT_BO Box { size 1.0 0.02 0.040000000000000036 }
+    }
+  ]
+  boundingObject USE ACCUM_BORDER_RIGHT_BO
+}
+Solid {
+  translation 8.35 -1.55 0.64
+  rotation 0 0 1 0.0
+  name "accum_border_far"
+  children [
+    Shape {
+      appearance PBRAppearance { baseColor 0.42 0.46 0.52 roughness 0.6 metalness 0.4 }
+      geometry DEF ACCUM_BORDER_FAR_BO Box { size 1.0 0.02 0.040000000000000036 }
+    }
+  ]
+  boundingObject USE ACCUM_BORDER_FAR_BO
+}
+DEF DEMO_PANEL Robot {
+  name "demo_panel"
+  controller "demo_panel_mechanism"
+  supervisor TRUE
+  children [
+    Camera {
+      name "cv_top"
+      translation 2.55 1.2246467991473532e-16 2.7
+      rotation -3.061616997868383e-17 1.0 -3.061616997868383e-17 1.5707963267948966
+      width 1944
+      height 2592
+      fieldOfView 1.1868238913561442
+    }
+    Camera {
+      name "cv_diag"
+      translation 2.55 0.6498382723187708 2.485415979493226
+      rotation -0.17108786974603557 0.9702875252478139 -0.17108786974603557 1.6009545877878544
+      width 1944
+      height 2592
+      fieldOfView 1.1868238913561442
+    }
+    Camera {
+      name "cv_side"
+      translation 2.55 1.0958141679009201 0.795871317022424
+      rotation -0.5598087876773538 0.610924088965579 -0.5598087876773538 2.0447662092172108
+      width 1944
+      height 2592
+      fieldOfView 1.1868238913561442
+    }
+    Camera {
+      name "cv_top_mirror"
+      translation 2.55 -2.370783281219034 1.6936654333790175
+      rotation -0.6398659817769158 -0.4256090350654313 0.6398659817769158 2.336819868581144
+      width 1944
+      height 2592
+      fieldOfView 1.1868238913561442
+    }
+    Camera {
+      name "cv_diag_mirror"
+      translation 2.55 -2.6677510151022914 1.0773022812291175
+      rotation -0.6025486492449029 -0.5233261416996914 0.602548649244903 2.177324831739565
+      width 1944
+      height 2592
+      fieldOfView 1.1868238913561442
+    }
+    Camera {
+      name "cv_top_track"
+      translation 2.55 1.2246467991473532e-16 2.7
+      rotation -3.061616997868383e-17 1.0 -3.061616997868383e-17 1.5707963267948966
+      width 336
+      height 1296
+      fieldOfView 0.34649148975217425
+    }
+    Pose {
+      translation 5.85 -0.3 0.6365
+      children [
+        Shape {
+          appearance DEF POST_APP PBRAppearance { baseColor 0.30 0.32 0.36 roughness 0.7 metalness 0.5 }
+          geometry Cylinder { radius 0.05 height 1.273 }
+        }
+      ]
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 5.85 -0.3 0
+        axis 0 0 1
+      }
+      device [
+        RotationalMotor {
+          name "paddle_shiber1"
+          maxVelocity 6.0
+          maxTorque 180
+          controlPID 50 0 0
+          sound ""
+        }
+        PositionSensor {
+          name "paddle_shiber1_sensor"
+        }
+      ]
+      endPoint Solid {
+        name "paddle shiber1"
+        contactMaterial "paddle"
+        children [
+          Pose {
+            translation 5.425 -0.3 1.048
+            rotation 1 0 0 0.15
+            children [
+              Shape {
+                appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+                geometry Box { size 0.85 0.03 0.45 }
+              }
+            ]
+          }
+        ]
+        boundingObject Pose {
+          translation 5.425 -0.3 1.048
+          rotation 1 0 0 0.15
+          children [
+            Box { size 0.85 0.03 0.45 }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 3
+          centerOfMass [
+            5.425 -0.3 1.048
+          ]
+        }
+      }
+    }
+    Pose {
+      translation 4.85 0.25 0.83
+      rotation 0 0 1 -1.5708
+      children [
+        DistanceSensor {
+          name "beam_sensor_1"
+          lookupTable [ 0 0 0, 0.55 0.55 0 ]
+          type "laser"
+          aperture 0.02
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.90 0.10 0.10 emissiveColor 0.5 0.05 0.05 roughness 0.4 metalness 0.3 }
+              geometry Cylinder { radius 0.008 height 0.03 }
+            }
+          ]
+        }
+      ]
+    }
+    Pose {
+      translation 8.2 0.3 0.6365
+      children [
+        Shape {
+          appearance DEF POST_APP PBRAppearance { baseColor 0.30 0.32 0.36 roughness 0.7 metalness 0.5 }
+          geometry Cylinder { radius 0.05 height 1.273 }
+        }
+      ]
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 8.2 0.3 0
+        axis 0 0 1
+      }
+      device [
+        RotationalMotor {
+          name "paddle_shiber2"
+          maxVelocity 6.0
+          maxTorque 180
+          controlPID 50 0 0
+          sound ""
+        }
+        PositionSensor {
+          name "paddle_shiber2_sensor"
+        }
+      ]
+      endPoint Solid {
+        name "paddle shiber2"
+        contactMaterial "paddle"
+        children [
+          Pose {
+            translation 7.7749999999999995 0.3 1.048
+            rotation 1 0 0 -0.15
+            children [
+              Shape {
+                appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+                geometry Box { size 0.85 0.03 0.45 }
+              }
+            ]
+          }
+        ]
+        boundingObject Pose {
+          translation 7.7749999999999995 0.3 1.048
+          rotation 1 0 0 -0.15
+          children [
+            Box { size 0.85 0.03 0.45 }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 3
+          centerOfMass [
+            7.7749999999999995 0.3 1.048
+          ]
+        }
+      }
+    }
+    Pose {
+      translation 7.2 0.25 0.83
+      rotation 0 0 1 -1.5708
+      children [
+        DistanceSensor {
+          name "beam_sensor_2"
+          lookupTable [ 0 0 0, 0.55 0.55 0 ]
+          type "laser"
+          aperture 0.02
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.90 0.10 0.10 emissiveColor 0.5 0.05 0.05 roughness 0.4 metalness 0.3 }
+              geometry Cylinder { radius 0.008 height 0.03 }
+            }
+          ]
+        }
+      ]
+    }
+    Pose {
+      translation 7.06 -0.3 0.6365
+      children [
+        Shape {
+          appearance DEF POST_APP PBRAppearance { baseColor 0.30 0.32 0.36 roughness 0.7 metalness 0.5 }
+          geometry Cylinder { radius 0.05 height 1.273 }
+        }
+      ]
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 7.06 -0.3 0
+        axis 0 0 1
+      }
+      device [
+        RotationalMotor {
+          name "paddle_shiber3"
+          maxVelocity 6.0
+          maxTorque 180
+          controlPID 50 0 0
+          sound ""
+        }
+        PositionSensor {
+          name "paddle_shiber3_sensor"
+        }
+      ]
+      endPoint Solid {
+        name "paddle shiber3"
+        contactMaterial "paddle"
+        children [
+          Pose {
+            translation 6.635 -0.3 1.048
+            rotation 1 0 0 0.15
+            children [
+              Shape {
+                appearance PBRAppearance { baseColor 0.85 0.55 0.10 roughness 0.4 metalness 0.6 }
+                geometry Box { size 0.85 0.03 0.45 }
+              }
+            ]
+          }
+        ]
+        boundingObject Pose {
+          translation 6.635 -0.3 1.048
+          rotation 1 0 0 0.15
+          children [
+            Box { size 0.85 0.03 0.45 }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 3
+          centerOfMass [
+            6.635 -0.3 1.048
+          ]
+        }
+      }
+    }
+    Pose {
+      translation 6.06 0.25 0.83
+      rotation 0 0 1 -1.5708
+      children [
+        DistanceSensor {
+          name "beam_sensor_3"
+          lookupTable [ 0 0 0, 0.55 0.55 0 ]
+          type "laser"
+          aperture 0.02
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.90 0.10 0.10 emissiveColor 0.5 0.05 0.05 roughness 0.4 metalness 0.3 }
+              geometry Cylinder { radius 0.008 height 0.03 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

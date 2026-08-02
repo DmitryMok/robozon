@@ -1,0 +1,65 @@
+{
+  "frame_rate": 5.17,
+  "frame_rate_target": 30.0,
+  "total_frames": 20,
+  "duration_s": 3.672,
+  "cameras": {
+    "stream": [
+      "top"
+    ],
+    "moments": [
+      "diag",
+      "side"
+    ]
+  },
+  "target_uid": 1,
+  "objects": [
+    {
+      "uid": 1,
+      "type": "pen",
+      "spawn_x": 3.81
+    },
+    {
+      "uid": 2,
+      "type": "box_large",
+      "spawn_x": 3.26
+    }
+  ],
+  "zone": {
+    "start_x": 1.5499999999999998,
+    "end_x": 3.55,
+    "cv_rig_x": 2.55
+  },
+  "moment_events": {
+    "start_top": {
+      "frame_idx": 2,
+      "x": 1.64,
+      "moment": "start",
+      "threshold_x": 1.6735275919963168
+    },
+    "start_side": {
+      "frame_idx": 7,
+      "x": 2.29,
+      "moment": "start",
+      "threshold_x": 2.2320206439418464
+    },
+    "center": {
+      "frame_idx": 10,
+      "x": 2.57,
+      "moment": "center",
+      "threshold_x": 2.55
+    },
+    "end_side": {
+      "frame_idx": 12,
+      "x": 2.97,
+      "moment": "end",
+      "threshold_x": 2.8679793560581532
+    },
+    "end_top": {
+      "frame_idx": 18,
+      "x": 3.52,
+      "moment": "end",
+      "threshold_x": 3.426472408003683
+    }
+  }
+}

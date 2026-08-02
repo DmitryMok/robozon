@@ -1,0 +1,22 @@
+{
+  "target_uid": 13,
+  "threshold": "end_side",
+  "moment": "end",
+  "threshold_x": 2.8679793560581532,
+  "objects": [
+    {
+      "uid": 13,
+      "type": "pen",
+      "x": 2.88,
+      "y": 0.0,
+      "z": 0.7
+    },
+    {
+      "uid": 14,
+      "type": "box_large",
+      "x": 1.85,
+      "y": -0.0,
+      "z": 0.7
+    }
+  ]
+}

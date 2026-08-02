@@ -1,0 +1,12 @@
+PyQt6
+numpy
+opencv-python
+trimesh
+shapely
+matplotlib
+PyYAML
+pyqtgraph
+PyOpenGL
+scipy
+manifold3d
+mapbox_earcut

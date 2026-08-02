@@ -1,0 +1,23 @@
+Всего записей: 16, с проблемой: 0
+
+box_small       uid=1 OK    scale=1.396 fallback=[] swapped=[] center_touches_edge=[] io=0.5633 assemble=0.1992 composite=0.2303 total=0.9928
+lunchbox        uid=2 OK    scale=2.339 fallback=[] swapped=[] center_touches_edge=[] io=0.5564 assemble=0.1433 composite=0.2467 total=0.9464
+detergent       uid=3 OK    scale=1.545 fallback=[] swapped=[] center_touches_edge=[] io=0.5136 assemble=0.1653 composite=0.2899 total=0.9688
+bag             uid=4 OK    scale=2.473 fallback=[] swapped=[] center_touches_edge=[] io=0.5086 assemble=0.1444 composite=0.2482 total=0.9013
+pen             uid=5 OK    scale=3.205 fallback=[] swapped=[] center_touches_edge=[] io=0.6385 assemble=0.1326 composite=0.2418 total=1.0129
+box_large       uid=6 OK    scale=1.030 fallback=[] swapped=[] center_touches_edge=[] io=0.6041 assemble=0.2089 composite=0.2301 total=1.0431
+pouf            uid=7 OK    scale=0.972 fallback=[] swapped=[] center_touches_edge=[] io=0.531 assemble=0.2859 composite=0.2429 total=1.0599
+bottle          uid=8 OK    scale=2.704 fallback=[] swapped=[] center_touches_edge=[] io=0.5734 assemble=0.1686 composite=0.24 total=0.9821
+plate           uid=9 OK    scale=2.339 fallback=[] swapped=[] center_touches_edge=[] io=0.5501 assemble=0.1633 composite=0.2538 total=0.9672
+cylinder        uid=10 OK    scale=1.145 fallback=['center_side', 'end_side', 'start_side'] swapped=[] center_touches_edge=[] io=0.5136 assemble=0.1881 composite=0.223 total=0.9247
+helmet          uid=11 OK    scale=1.442 fallback=[] swapped=[] center_touches_edge=[] io=0.5204 assemble=0.1659 composite=0.2644 total=0.9507
+asym_barrel     uid=12 OK    scale=2.622 fallback=[] swapped=[] center_touches_edge=[] io=0.5514 assemble=0.1355 composite=0.2293 total=0.9162
+asym_cone       uid=13 OK    scale=2.473 fallback=[] swapped=[] center_touches_edge=[] io=0.6118 assemble=0.1465 composite=0.2451 total=1.0034
+asym_cyl        uid=14 OK    scale=2.704 fallback=[] swapped=[] center_touches_edge=[] io=0.6073 assemble=0.1475 composite=0.2227 total=0.9775
+cyl_skewed      uid=15 OK    scale=1.967 fallback=[] swapped=[] center_touches_edge=[] io=0.5243 assemble=0.1628 composite=0.2758 total=0.9629
+ell_cyl         uid=16 OK    scale=2.163 fallback=[] swapped=[] center_touches_edge=[] io=0.5164 assemble=0.1529 composite=0.237 total=0.9063
+
+timings[io_load]: min=0.509 mean=0.555 max=0.638 (n=16)
+timings[assemble_grid_v2]: min=0.133 mean=0.169 max=0.286 (n=16)
+timings[composite_write]: min=0.223 mean=0.245 max=0.290 (n=16)
+timings[total]: min=0.901 mean=0.970 max=1.060 (n=16)

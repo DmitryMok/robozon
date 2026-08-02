@@ -1,0 +1,163 @@
+#VRML_SIM R2025a utf8
+# Ролл-кейдж 1200x800x800 мм: дно + стенки. По умолчанию открытая сторона —
+# локальный +X (три стенки, боковой приём при отклонении шибером).
+# closed=TRUE добавляет 4-ю (переднюю) стенку — приём "в лоб" с конца ленты:
+# верх ленты должен быть выше верха этой стенки, чтобы товар проезжал по
+# инерции над кромкой и падал внутрь.
+# size: x — глубина (от открытой/передней стороны к задней), y — длина
+# открытой стороны, z — высота. floorHeight — высота дна над полом (рама на колёсах).
+# template language: javascript
+
+PROTO RollCage [
+  field SFVec3f    translation   0 0 0
+  field SFRotation rotation      0 0 1 0
+  field SFString   name          "roll cage"
+  field SFVec3f    size          0.8 1.2 0.8
+  field SFFloat    wallThickness 0.02
+  field SFFloat    floorHeight   0.15
+  field SFBool     closed        FALSE
+  field SFColor    color         0.35 0.42 0.55
+  field SFString   contactMaterial "chute"   # скользкий по умолчанию — товар
+                                            # падает в кейдж и не застревает на
+                                            # кромке/дне (friction 0.02).
+]
+{
+  %<
+    const s = fields.size.value;
+    const t = fields.wallThickness.value;
+    const fh = fields.floorHeight.value;
+    const wallH = s.z - fh;        // стенки от дна до верха
+    const wallCz = fh + wallH / 2;
+    const cm = fields.contactMaterial.value;
+  >%
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    contactMaterial %<= '"' + cm + '"' >%
+    children [
+      DEF FLOOR Pose {
+        translation 0 0 %<= fh - t / 2 >%
+        children [
+          Shape {
+            appearance DEF CAGE_APP PBRAppearance {
+              baseColor IS color
+              roughness 0.5
+              metalness 0.6
+            }
+            geometry Box {
+              size %<= s.x >% %<= s.y >% %<= t >%
+            }
+          }
+        ]
+      }
+      DEF BACK Pose {
+        translation %<= -s.x / 2 + t / 2 >% 0 %<= wallCz >%
+        children [
+          Shape {
+            appearance USE CAGE_APP
+            geometry Box {
+              size %<= t >% %<= s.y >% %<= wallH >%
+            }
+          }
+        ]
+      }
+      DEF SIDE_L Pose {
+        translation 0 %<= s.y / 2 - t / 2 >% %<= wallCz >%
+        children [
+          Shape {
+            appearance USE CAGE_APP
+            geometry Box {
+              size %<= s.x >% %<= t >% %<= wallH >%
+            }
+          }
+        ]
+      }
+      DEF SIDE_R Pose {
+        translation 0 %<= -s.y / 2 + t / 2 >% %<= wallCz >%
+        children [
+          Shape {
+            appearance USE CAGE_APP
+            geometry Box {
+              size %<= s.x >% %<= t >% %<= wallH >%
+            }
+          }
+        ]
+      }
+      %< if (fields.closed.value) { >%
+      DEF FRONT Pose {
+        translation %<= s.x / 2 - t / 2 >% 0 %<= wallCz >%
+        children [
+          Shape {
+            appearance USE CAGE_APP
+            geometry Box {
+              size %<= t >% %<= s.y >% %<= wallH >%
+            }
+          }
+        ]
+      }
+      %< } >%
+      Pose {
+        translation 0 0 %<= (fh - t) / 2 >%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.15 0.15 0.17
+              roughness 0.8
+              metalness 0.2
+            }
+            geometry Box {
+              size %<= s.x * 0.85 >% %<= s.y * 0.85 >% %<= fh - t >%
+            }
+          }
+        ]
+      }
+    ]
+    boundingObject Group {
+      children [
+        Pose {
+          translation 0 0 %<= fh - t / 2 >%
+          children [
+            Box {
+              size %<= s.x >% %<= s.y >% %<= t >%
+            }
+          ]
+        }
+        Pose {
+          translation %<= -s.x / 2 + t / 2 >% 0 %<= wallCz >%
+          children [
+            Box {
+              size %<= t >% %<= s.y >% %<= wallH >%
+            }
+          ]
+        }
+        Pose {
+          translation 0 %<= s.y / 2 - t / 2 >% %<= wallCz >%
+          children [
+            Box {
+              size %<= s.x >% %<= t >% %<= wallH >%
+            }
+          ]
+        }
+        Pose {
+          translation 0 %<= -s.y / 2 + t / 2 >% %<= wallCz >%
+          children [
+            Box {
+              size %<= s.x >% %<= t >% %<= wallH >%
+            }
+          ]
+        }
+        %< if (fields.closed.value) { >%
+        Pose {
+          translation %<= s.x / 2 - t / 2 >% 0 %<= wallCz >%
+          children [
+            Box {
+              size %<= t >% %<= s.y >% %<= wallH >%
+            }
+          ]
+        }
+        %< } >%
+      ]
+    }
+  }
+}
