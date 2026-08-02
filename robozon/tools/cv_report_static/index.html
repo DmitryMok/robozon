@@ -13,6 +13,10 @@
     dl { display:grid; grid-template-columns:max-content 1fr; gap:7px 16px; } dt { font-weight:650; } dd { margin:0; }
     #dropzone { border:2px dashed #9fb3c1; border-radius:10px; padding:18px; text-align:center; color:#52616d; margin-bottom:12px; transition:background .15s, border-color .15s; }
     #dropzone.drag { background:#e8f2fa; border-color:#1269a8; color:#17212b; }
+    .warning { background:#fff4e0; border:1px solid #e0a52c; border-radius:8px; padding:12px 14px; margin:10px 0; color:#7a5200; display:none; }
+    .summary { border:2px solid #1269a8; border-radius:10px; padding:16px 18px; margin-top:8px; }
+    .summary h2 { margin-top:0; }
+    .summary .timings-note { font-size:14px; }
   </style>
 </head>
 <body>
@@ -24,14 +28,25 @@
       <label>Единицы STL <select name="unit"><option value="mm">мм</option><option value="m">м</option></select></label>
       <button>Построить отчёт</button></form>
     <div id="status" role="status"></div>
-    <p class="note">Сегментация в отчёте — точный силуэт из геометрии STL, а не результат камеры или нейросети.</p>
   </main>
   <section class="card result" id="result">
     <h2>Шаг 1. Сетка: 9 ракурсов</h2><p id="grid-time"></p><img id="grid" alt="Сетка ракурсов">
     <h2>Шаг 2. Контуры: вычитание фона</h2><p id="seg-time"></p><img id="contours" alt="Контуры объектов">
+    <div class="warning" id="gpu-warning"></div>
     <h2>Шаг 3. 3D-реконструкция и габариты</h2><p id="recon-time"></p><p class="note" id="gauge-note"></p><img id="reconstruction" alt="Visual Hull">
     <h2>Шаг 4. Перекат по круглой проекции</h2><p id="g4-time"></p><p class="note" id="g4-note"></p><img id="projection" alt="Круглая проекция">
     <h2>Устойчивая локальная круглость вдоль оси</h2><p id="sustained-time"></p><p class="note" id="sustained-note"></p>
+    <section class="summary" id="summary">
+      <h2>Итог</h2>
+      <dl>
+        <dt>Габариты</dt><dd id="summary-dims"></dd>
+        <dt>Истинные габариты STL</dt><dd id="summary-true-dims"></dd>
+        <dt>Ошибка</dt><dd id="summary-error"></dd>
+        <dt>Категория</dt><dd id="summary-category"></dd>
+      </dl>
+      <p id="summary-timings"></p>
+      <p class="note timings-note" id="summary-timings-note"></p>
+    </section>
   </section>
   <script>
     const form = document.querySelector('#form'), status = document.querySelector('#status'), result = document.querySelector('#result');
@@ -58,6 +73,9 @@
         const base = '/reports/' + data.id + '/';
         document.querySelector('#grid').src = base + data.grid.image; document.querySelector('#grid-time').textContent = `${data.grid.frames} кадров; формирование кропов и сетки: ${data.grid.seconds} с`;
         document.querySelector('#contours').src = base + data.segmentation.image; document.querySelector('#seg-time').textContent = `Вычитание фона и контуры (тот же масштаб кропа, что в сетке): ${data.segmentation.seconds} с`;
+        const gpuWarning = document.querySelector('#gpu-warning');
+        if (data.g4?.warning) { gpuWarning.textContent = data.g4.warning; gpuWarning.style.display = 'block'; }
+        else { gpuWarning.textContent = ''; gpuWarning.style.display = 'none'; }
         document.querySelector('#reconstruction').src = base + data.reconstruction.image; document.querySelector('#recon-time').textContent = `${data.reconstruction.algorithm}; ${data.reconstruction.seconds} с; габариты: ${data.reconstruction.dimensions_mm.join(' × ')} мм`;
         const gaugeNotes = [];
         if (data.reconstruction.dims_unreliable) gaugeNotes.push(data.reconstruction.dims_note);
@@ -75,6 +93,21 @@
           if (s.seconds !== null) parts.push(`${s.seconds} с`);
           document.querySelector('#sustained-time').textContent = parts.length ? parts.join('; ') : 'Не проверялось';
           document.querySelector('#sustained-note').textContent = s.note ?? '';
+        }
+        if (data.summary) {
+          const s = data.summary;
+          document.querySelector('#summary-dims').textContent = `${s.dimensions_mm.join(' × ')} мм`;
+          document.querySelector('#summary-true-dims').textContent = s.true_dims_mm ? `${s.true_dims_mm.join(' × ')} мм (исходный STL)` : '—';
+          document.querySelector('#summary-error').textContent = (s.dims_error_mm && s.dims_error_pct)
+            ? s.dims_error_mm.map((v, i) => `${v >= 0 ? '+' : ''}${v} мм (${s.dims_error_pct[i] >= 0 ? '+' : ''}${s.dims_error_pct[i]}%)`).join(', ')
+            : '—';
+          document.querySelector('#summary-category').textContent = `${s.category} — ${s.category_label}`;
+          const t = s.timings;
+          document.querySelector('#summary-timings').textContent =
+            `Шаг 1 (сетка): ${t.grid_seconds} с · Шаг 2 (сегментация): ${t.segmentation_seconds} с · ` +
+            `Шаг 3 (3D-реконструкция): ${t.reconstruction_seconds} с · Шаг 4 (круглая проекция + sustained): ${t.g4_seconds} с · ` +
+            `Итого: ${t.total_seconds} с`;
+          document.querySelector('#summary-timings-note').textContent = s.timings_note;
         }
         result.style.display = 'block'; status.textContent = data.notice;
       } catch (error) { status.textContent = 'Ошибка: ' + error.message; } finally { button.disabled = false; }

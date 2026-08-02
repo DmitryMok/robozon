@@ -1858,6 +1858,11 @@ class GRollResult:
     # бы в uncertain — см. _g4_core_from_points). Двойное подтверждение non-roundness даёт
     # уверенный not_round вместо ухода к оператору.
     sustained_confirmed_not_round: bool = False
+    # Облако 3D-точек, реально использованное реконструкцией (torchhull GPU / CPU-параллакс /
+    # band-пересечение) — для визуализации ТОГО ЖЕ облака, по которому принят вердикт (не
+    # отдельного независимого CPU-халла, см. задача «Доработка CV-отчёта»). None у вызывающих
+    # мест, которые это поле не заполняют (обратная совместимость).
+    points_3d: np.ndarray | None = None
 
 
 def _degenerate_g4_result(mesh_dims: tuple[float, float, float], start_time: float) -> GRollResult:
@@ -2252,6 +2257,7 @@ def _g4_core_from_points(
             axis_hits=[],
             elapsed_seconds=time.perf_counter() - start_time,
             method="g4",
+            points_3d=points_3d,
         )
 
     # --- Оптимизация G4-перебора (см. заметка задачи [[Оптимизация скорости G4-перебора
@@ -2518,6 +2524,7 @@ def _g4_core_from_points(
         sustained_seconds=sustained_seconds,
         sustained_promoted_from_alt_axis=sustained_promoted_from_alt_axis,
         sustained_confirmed_not_round=sustained_confirmed_not_round,
+        points_3d=points_3d,
     )
 
 

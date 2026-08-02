@@ -27,8 +27,15 @@ TOOLS_ROOT = ROOT.parent / "roboson_tools"
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
-from roboson_tools.core.experiment import Orientation, check_model_roll_g4, check_simple_camera_dims_v3
+from roboson_tools.core.experiment import (
+    _TORCHHULL_AVAILABLE,
+    Orientation,
+    check_model_roll_g4,
+    check_simple_camera_dims_v3,
+    mesh_true_dims,
+)
 from roboson_tools.geometry.mesh_io import Mesh, load_stl
+from roboson_tools.metrics.roundness import RoundnessResult
 from roboson_tools.silhouette.analytical import PRINCIPAL_AXIS
 from roboson_tools.silhouette.camera import belt_offset, build_silhouette, camera_frame, frame_shape
 from roboson_tools.visual_hull.exact_polyhedral_hull import carve
@@ -43,6 +50,25 @@ MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 # сторона 9мм < 10мм должна давать oversize, но category молча оставалась по одной круглости).
 MAX_DIMS_MM = (450.0, 320.0, 320.0)
 MIN_DIMS_MM = (10.0, 10.0, 10.0)
+
+# Первый вызов torchhull/CUDA в процессе платит разовый прогрев (создание CUDA-контекста,
+# JIT-компиляция ядер драйвером) — не расчёт, а фиксированная стоимость процесса, ~1-2с
+# сверх обычных 0.2-0.3с. Прогреваем ОДИН раз при первом запросе (не на каждый), чтобы
+# g4.seconds/summary.timings честно отражали расчёт, а не холодный старт GPU.
+_gpu_warmed_up = False
+
+
+def _warm_up_torchhull_once(mesh: Mesh, angles: list[float], fov_deg: float,
+                             distances: dict[float, float], resolution_px: int) -> None:
+    global _gpu_warmed_up
+    if _gpu_warmed_up:
+        return
+    check_model_roll_g4(
+        mesh, Orientation(), angles, resolution_px=resolution_px,
+        use_camera_silhouettes=True, camera_fov_deg=fov_deg, camera_distances=distances,
+        torchhull_parallax=True,
+    )
+    _gpu_warmed_up = True
 
 
 def _gauge_violation(dims_mm: list[float]) -> str | None:
@@ -138,13 +164,23 @@ def _render_mesh(
     fig.tight_layout(); fig.savefig(out, dpi=130); plt.close(fig)
 
 
-def _render_projection(coords: list[tuple[float, float]] | None, out: Path) -> None:
+def _render_projection(
+    coords: list[tuple[float, float]] | None, out: Path, roundness: RoundnessResult | None = None,
+) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.patches import Circle
     fig, ax = plt.subplots(figsize=(5, 5))
     if coords:
         pts = np.asarray(coords); ax.fill(pts[:, 0], pts[:, 1], "#4da3d9", alpha=.55); ax.plot(pts[:, 0], pts[:, 1], "#17324d")
+    if roundness is not None:
+        # Стиль 1:1 с roboson_tools/gui/panels/visual_hull_panel.py::_draw_circles.
+        ax.add_patch(Circle(roundness.center_out, roundness.r_out, fill=False, color="tab:red",
+                             linewidth=1.5, label="описанная"))
+        ax.add_patch(Circle(roundness.center_in, roundness.r_in, fill=False, color="tab:green",
+                             linewidth=1.5, label="вписанная"))
+        ax.legend(loc="upper right", fontsize=8, framealpha=0.6)
     ax.set_aspect("equal"); ax.set_title("Круглая проекция по найденной оси"); ax.grid(alpha=.25)
     fig.tight_layout(); fig.savefig(out, dpi=130); plt.close(fig)
 
@@ -316,14 +352,36 @@ def build_report(stl_path: Path, run_dir: Path, unit: str = "mm") -> dict:
     dims_v3 = check_simple_camera_dims_v3(mesh, Orientation(), fov_deg, distances[90.], resolution_px, top_angle_deg=90., side_angles_deg=[5., 70., 157.26, 171.95], belt_positions=["start", "center", "end"], camera_distances=distances, supersample=1)
     dims = (hull.vertices.max(axis=0) - hull.vertices.min(axis=0)).tolist()
 
+    # GPU/torchhull статус (см. задача «Доработка CV-отчёта»): CPU-параллакс
+    # (`use_cpu_parallax_hull` внутри `check_model_roll_g4`) лишён sustained-check и может
+    # дать ложный «круглый» на гранёных объектах (короб/куб по диагонали) — по решению
+    # пользователя он НЕ используется вовсе. Без GPU считается только дешёвая справочная
+    # оценка (Analytical Mode, ортографическое band-пересечение, тоже без sustained-check —
+    # поэтому category принудительно уходит в "C"/gpu_required, не в автоматику).
+    gpu_available = _TORCHHULL_AVAILABLE
+    if gpu_available:
+        _warm_up_torchhull_once(mesh, angles, fov_deg, distances, resolution_px)
     g4_start = time.perf_counter()
-    g4 = check_model_roll_g4(
-        mesh, Orientation(), angles, resolution_px=resolution_px,
-        use_camera_silhouettes=True, camera_fov_deg=fov_deg, camera_distances=distances,
-        torchhull_parallax=True,
-    )
+    if gpu_available:
+        g4 = check_model_roll_g4(
+            mesh, Orientation(), angles, resolution_px=resolution_px,
+            use_camera_silhouettes=True, camera_fov_deg=fov_deg, camera_distances=distances,
+            torchhull_parallax=True,
+        )
+        compute_path = "gpu_torchhull"
+    else:
+        g4 = check_model_roll_g4(mesh, Orientation(), angles, resolution_px=resolution_px)
+        compute_path = "gpu_required_simplified_estimate"
     g4_s = time.perf_counter() - g4_start
     best_axis = list(g4.best_axis_dir) if g4.best_axis_dir is not None else None
+    gpu_warning = (
+        "GPU/torchhull недоступен на этом сервере — точный расчёт круглости не выполняется. "
+        "Ниже — справочная оценка по упрощённой (ортографической, без реального рига камер и "
+        "без защиты от ложного \"круглый\" на гранёных формах) реконструкции, она может "
+        "отличаться от точного результата. Категория объекта не определена автоматически — "
+        "нужен сервер с GPU/CUDA или ручная проверка."
+        if not gpu_available else None
+    )
 
     # Устойчивая локальная круглость вдоль оси переката (см. вики [[Устойчивая локальная
     # круглость вдоль оси переката (G4)]]) — заменяет отклонённый подход через
@@ -351,15 +409,63 @@ def build_report(stl_path: Path, run_dir: Path, unit: str = "mm") -> dict:
     # отчёте — category считалась только по G4, ни один размер не проверялся.
     gauge = _gauge_violation(dims_mm)
     if gauge is not None:
-        category = "C"
+        category, category_reason = "C", "gauge"
+    elif not gpu_available:
+        # Круглость не проверена точно (см. gpu_warning выше) — принудительно к оператору,
+        # не в автоматику по непроверенному g4.verdict.
+        category, category_reason = "C", "gpu_required"
     else:
         category = {"round": "D", "not_round": "B", "uncertain": "C"}.get(g4.verdict, "C")
+        category_reason = "uncertain" if category == "C" else None
+
+    # Шаг 3: показываем ИМЕННО то облако, что дал G4 (torchhull GPU или Analytical Mode
+    # band-пересечение без GPU) — не отдельный независимый carve(), чтобы не рассинхронизировать
+    # картинку с реально использованным для вердикта облаком (см. задача «Доработка CV-отчёта»).
+    # carve()/hull остаются как запасной путь только для вырожденного случая (g4.points_3d
+    # пуст) — carve() и так уже посчитан выше для dims-fallback, повторного вызова не нужно.
+    if g4.points_3d is not None and len(g4.points_3d) >= 4:
+        recon_vertices, recon_faces = g4.points_3d, None
+        recon_algo_suffix = (
+            "torchhull (GPU, sparse voxel octree + marching cubes)" if compute_path == "gpu_torchhull"
+            else "exact polyhedral hull (CPU, ортографический fallback)"
+        )
+    else:
+        recon_vertices, recon_faces = hull.vertices, hull.faces
+        recon_algo_suffix = "exact polyhedral hull (CPU, точный)"
+    reconstruction_algorithm = f"multi-side triangulation v3 (габариты); {recon_algo_suffix}"
+
     # Ось+плоскость среза рисуются ПОСЛЕ G4 (нужен best_axis) — тот же вид, что Panel 1 в
     # roboson_tools при включённом показе круглой проекции (see _render_mesh docstring).
-    _render_mesh(hull.vertices, hull.faces, run_dir / "reconstruction.png",
+    _render_mesh(recon_vertices, recon_faces, run_dir / "reconstruction.png",
                  "3D-реконструкция Visual Hull (невыпуклый, Exact Polyhedral Hull)", axis_dir=best_axis)
-    _render_projection(g4.best_projection_coords, run_dir / "round_projection.png")
+    _render_projection(g4.best_projection_coords, run_dir / "round_projection.png", roundness=g4.best_roundness)
     total_s = grid_s + segmentation_s + reconstruction_s + g4_s
+
+    # Итоговый вывод (п.4 ТЗ): истинные габариты исходного STL (не реконструкции) — эталон
+    # для ошибки в мм/%; сравнение покомпонентно по убыванию (как в других местах проекта,
+    # см. `sim/grid_reconstruction.py`) — сырые оси реконструкции и меша не обязаны совпадать.
+    true_dims = mesh_true_dims(mesh, axis_step_deg=5.0)
+    if true_dims is not None:
+        true_sorted = sorted(true_dims, reverse=True)
+        dims_sorted = sorted(dims_mm, reverse=True)
+        dims_error_mm = [round(a - b, 2) for a, b in zip(dims_sorted, true_sorted)]
+        dims_error_pct = [round(100.0 * (a - b) / b, 2) if b > 1e-9 else None
+                           for a, b in zip(dims_sorted, true_sorted)]
+    else:
+        dims_error_mm = dims_error_pct = None
+    # Зона C (`sim/router.py::CATEGORY_TO_ZONE["oversize"]`) — штатный маршрут сортировки по
+    # габариту (прямой проезд без лотка), а НЕ накопитель. Накопитель — отдельная зона для
+    # товаров, не классифицированных уверенно ни в одну из B/C/D (см. `03 Work/Описание
+    # решения для формы (Задача 3).md`) — сюда уходят только uncertain/gpu_required, не gauge.
+    category_label = {
+        ("C", "gauge"): f"Вне габарита (мин {MIN_DIMS_MM[0]:.0f}×{MIN_DIMS_MM[1]:.0f}×{MIN_DIMS_MM[2]:.0f}, "
+                         f"макс {MAX_DIMS_MM[0]:.0f}×{MAX_DIMS_MM[1]:.0f}×{MAX_DIMS_MM[2]:.0f}мм) — зона C "
+                         f"(отдельный маршрут сортировки по габариту, не накопитель)",
+        ("C", "gpu_required"): "Не определено — точный расчёт круглости не выполнялся (нужен GPU) — в накопитель (не классифицирован уверенно), см. предупреждение выше",
+        ("C", "uncertain"): "Пограничный случай — не классифицирован уверенно — в накопитель (ручная проверка)",
+        ("D", None): "Круглый — требует доупаковки",
+        ("B", None): "Не круглый — годен для сортировки",
+    }.get((category, category_reason), f"Категория {category}")
     sustained_note = (
         "Локальная круглость не держится вдоль оси (короб/куб по диагонали) — verdict понижен "
         "round → uncertain этим признаком."
@@ -383,7 +489,7 @@ def build_report(stl_path: Path, run_dir: Path, unit: str = "mm") -> dict:
         "notice": "Сегментация в этом отчёте — точный геометрический силуэт STL, не результат сенсорной CV-сегментации и не SAM3.",
         "grid": {"image": "grid.png", "seconds": round(grid_s, 4), "frames": 9},
         "segmentation": {"image": "contours.png", "seconds": round(segmentation_s, 4)},
-        "reconstruction": {"algorithm": "multi-side triangulation v3 (габариты); Exact Polyhedral Visual Hull, невыпуклый (визуализация)", "seconds": round(reconstruction_s, 4), "image": "reconstruction.png", "dimensions_mm": dims_mm,
+        "reconstruction": {"algorithm": reconstruction_algorithm, "seconds": round(reconstruction_s, 4), "image": "reconstruction.png", "dimensions_mm": dims_mm,
                            "dims_unreliable": dims_unreliable,
                            "dims_note": ("Высоту не удалось определить (все методы триангуляции дали 0) — "
                                          "возможно, объект вне поля зрения бокового рига или вырожденный силуэт."
@@ -395,8 +501,12 @@ def build_report(stl_path: Path, run_dir: Path, unit: str = "mm") -> dict:
             "note": (f"Вне габарита: {gauge} — категория C независимо от круглости."
                      if gauge else "В допуске."),
         },
-        "g4": {"verdict": g4.verdict, "category": category, "k": round(g4.best.k, 4) if g4.best else None,
+        "g4": {"verdict": g4.verdict, "category": category, "category_reason": category_reason,
+               "k": round(g4.best.k, 4) if g4.best else None,
+               "r_in_mm": round(g4.best_roundness.r_in, 2) if g4.best_roundness else None,
+               "r_out_mm": round(g4.best_roundness.r_out, 2) if g4.best_roundness else None,
                "axis": [round(v, 5) for v in best_axis] if best_axis else None, "seconds": round(g4_s, 4), "projection": "round_projection.png",
+               "compute_path": compute_path, "warning": gpu_warning,
                "note": "Категория чувствительна к ориентации STL (Camera Mode — реальный разреженный риг из 5 фиксированных ракурсов, а не идеализированная ортографика): поворот объекта относительно рига может дать другую k. Здесь используется ориентация STL как есть (без поворота)."},
         "sustained": {
             "fraction": round(g4.sustained_fraction, 4) if g4.sustained_fraction is not None else None,
@@ -405,6 +515,27 @@ def build_report(stl_path: Path, run_dir: Path, unit: str = "mm") -> dict:
             "confirmed_not_round": g4.sustained_confirmed_not_round,  # диагностика, на category НЕ влияет — см. note
             "seconds": round(g4.sustained_seconds, 4) if g4.sustained_seconds is not None else None,
             "note": sustained_note,
+        },
+        "summary": {
+            "dimensions_mm": dims_mm,
+            "true_dims_mm": [round(v, 2) for v in true_dims] if true_dims is not None else None,
+            "dims_error_mm": dims_error_mm,
+            "dims_error_pct": dims_error_pct,
+            "category": category,
+            "category_label": category_label,
+            "timings": {
+                "grid_seconds": round(grid_s, 4),
+                "segmentation_seconds": round(segmentation_s, 4),
+                "reconstruction_seconds": round(reconstruction_s, 4),
+                "g4_seconds": round(g4_s + (g4.sustained_seconds or 0.0), 4),
+                "total_seconds": round(total_s, 4),
+            },
+            "timings_note": (
+                "Тайминги этого отчёта — офлайн-расчёт по геометрии STL (без Webots, без реальных "
+                "камер), НЕ тайминги боевого конвейера сортировки. Для боевого конвейера ориентир — "
+                "отдельный замер на боевой 9-ракурсной сетке: carve ~70мс, G4+sustained ~10-300мс "
+                "после фикса dims_from_points, бюджет 0.5с/объект выполняется."
+            ),
         },
         "total_seconds": round(total_s, 4),
     }
