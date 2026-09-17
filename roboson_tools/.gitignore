@@ -7,6 +7,5 @@ exports/
 *.egg-info/
 config/state/
 .venv/
-bench_plots/
 diagnose_photo2_out/
 assets/photo/phone2/masks_review/
